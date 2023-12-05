@@ -10,6 +10,15 @@ CREATE TABLE persons
 );
 
 
+CREATE TABLE purchases
+(
+    purchases_id SERIAL PRIMARY KEY,
+    title VARCHAR(100),
+    count INTEGER,
+    fk_person_id INTEGER REFERENCES persons(person_id)
+);
+
+
 CREATE TABLE orders
 (
     order_id SERIAL,
@@ -39,6 +48,17 @@ VALUES
 (3, 'Nina'),
 (4, 'Nona'),
 (5, 'Olga');
+
+
+INSERT INTO purchases
+VALUES
+(1, 'product_1', 2, 2),
+(2, 'product_2', 5, 3),
+(3, 'product_3', 1, 2),
+(4, 'product_4', 45, 5),
+(5, 'product_5', 22, 1),
+(6, 'product_6', 8, 1),
+(7, 'product_7', 1, 4);
 
 
 INSERT INTO orders
