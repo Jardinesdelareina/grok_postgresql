@@ -10,6 +10,21 @@ CREATE TABLE persons
 );
 
 
+CREATE TABLE courses
+(
+    course_id INTEGER PRIMARY KEY,
+    title VARCHAR(100) NOT NULL
+);
+
+
+CREATE TABLE courses_persons
+(
+    course_id INTEGER REFERENCES courses(course_id),
+    person_id INTEGER REFERENCES persons(person_id),
+    CONSTRAINT courses_persons_pkey PRIMARY KEY (course_id, person_id)
+);
+
+
 CREATE TABLE purchases
 (
     purchases_id SERIAL PRIMARY KEY,
@@ -48,6 +63,24 @@ VALUES
 (3, 'Nina'),
 (4, 'Nona'),
 (5, 'Olga');
+
+
+INSERT INTO courses
+VALUES
+(1, 'PHP'),
+(2, 'Python'),
+(3, 'SQL'),
+(4, 'C');
+
+
+INSERT INTO courses_persons
+VALUES
+(1, 2),
+(1, 1),
+(2, 4),
+(3, 5),
+(4, 3),
+(4, 2);
 
 
 INSERT INTO purchases
