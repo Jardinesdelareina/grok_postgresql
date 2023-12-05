@@ -1,5 +1,10 @@
 ### Установка и использование PostgreSQL в Linux
 
+
+<div>
+    <img src="https://github.com/devicons/devicon/blob/master/icons/linux/linux-original.svg" width="40" height="40"/>&nbsp;
+</div>
+
 <div>
     <img src="https://github.com/devicons/devicon/blob/master/icons/postgresql/postgresql-original.svg" width="40" height="40"/>&nbsp;
 </div>
@@ -19,3 +24,10 @@
 `GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
 
 `\q`    выход из <b>psql</b>
+
+
+### Основные команды PSQL
+
+`\l`    список баз данных
+`\c <db_name>`  подключение к базе данных
+`\dt`   список таблиц базы данных
