@@ -123,7 +123,113 @@
 
 ### Базовые конструкции SQL
 
-Вывести все колонки из таблицы products
+Вывести все колонки из таблицы products:
 ```sql
 SELECT * FROM products;
+```
+
+Вывести количество записей в таблице products:
+```sql
+SELECT COUNT(*) FROM products;
+```
+
+Вывести колонки product_name и unit_price из таблицы products:
+```sql
+SELECT product_name, unit_price FROM products;
+```
+
+Вывести данные без повторений из колонки unit_price таблицы products:
+```sql
+SELECT DISTINCT unit_price FROM products;
+```
+
+Вывести product_name из products, где discontinued равен 0, записи с 5 по 10:
+```sql
+SELECT product_name FROM products WHERE discontinued = 0 OFFSET 5 LIMIT 10;
+```
+
+Вывести те записи product_name из products, в которых reorder_level равен одному из значений, указанных в скобках:
+```sql
+SELECT product_name FROM products WHERE reorder_level IN (25, 15);
+```
+
+Вывести данные из колонок order_date и order_id из таблицы orders, где order_date находится в пределах от '1997-01-01' до '1998-01-01':
+```sql
+SELECT order_date, order_id FROM orders WHERE order_date BETWEEN '1997-01-01' AND '1998-01-01';
+```
+
+Вывести те данные из customer_id и company_name из таблицы customers, где в названии customers_id в середине присутствует символ 'A':
+('%A' - если customer_id оканчивается на 'A',
+'A%'- если customer_id начинается на 'A')
+```sql
+SELECT customer_id, company_name FROM customers WHERE customer_id LIKE '%A%';
+```
+
+Вывести данные company_name, переименовав колонку в com_name:
+```sql
+SELECT company_name AS com_name FROM customers;
+```
+
+Вывести максимальное значение unit_price из таблицы order_details:
+```sql
+SELECT MAX(unit_price) FROM order_details;
+```
+
+Вывести округленное среднее число unit_price из таблицы order_details:
+```sql
+SELECT ROUND(AVG(unit_price)) FROM order_details;
+```
+
+Вывести округленное произведение значений колонок unit_price и quantity и поместить полученные значения в колонку, названную res_values:
+```sql
+SELECT ROUND(unit_price * quantity) AS res_value FROM order_details;
+```
+
+Вывести значения order_id и discount из order_details, которые НЕ равны 0: 
+```sql
+SELECT order_id, discount FROM order_details WHERE discount <> 0;
+```
+
+Вывести customer_id и order_date из таблицы orders, где значения отсортированы по колонке order_date В ОБРАТНОМ ПОРЯДКЕ:
+```sql
+SELECT customer_id, order_date FROM orders ORDER BY order_date DESC;
+```
+
+Вывести общее количество записей колонки country из таблицы employees, сгруппировав результат по колонке country (количество каждой из country):
+```sql
+SELECT country, COUNT(*) FROM employees GROUP BY country;
+```
+
+Вывести category_id и сумму произведений unit_price и units_in_stock в таблице products, сгруппировав результаты по category_id (сколько суммарно вышло sum_price на каждый category_id) и отфильтровав результаты (вывести только те category_id), где SUM(unit_price * units_in_stock) больше 5000.
+```sql
+SELECT category_id, SUM(unit_price * units_in_stock) AS sum_price
+FROM products
+GROUP BY category_id
+HAVING SUM(unit_price * units_in_stock) > 5000;
+```
+
+##### Объединение
+Вывести country из таблицы employees, country из таблицы customers и объединить результаты в одну колонку:
+(UNION устраняет дубликаты,
+UNION ALL выводит результат с дубликатами)
+```sql
+SELECT country FROM employees
+UNION
+SELECT country FROM customers;
+```
+
+##### Пересечение
+Вывести country, совпадающие для customers и suppliers:
+```sql
+SELECT country FROM customers
+INTERSECT
+SELECT country FROM suppliers;
+```
+
+##### Исключение
+Вывести country из таблицы customers, которых нет в country таблицы suppliers:
+```sql
+SELECT country FROM customers
+EXCEPT
+SELECT country FROM suppliers;
 ```
