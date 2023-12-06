@@ -1,0 +1,2 @@
+DROP DATABASE IF EXISTS online_store;
+CREATE DATABASE online_store;
