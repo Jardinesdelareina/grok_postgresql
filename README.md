@@ -250,3 +250,26 @@ SELECT country FROM customers
 EXCEPT
 SELECT country FROM suppliers;
 ```
+
+##### Соединение
+
+<b>INNER JOIN</b> 
+Вывести product_name и units_in_stock из products и company_name из suppliers, левая таблица - products, правая - suppliers, соединить их по колонке supplier_id, одинаковой для обеих таблиц:
+(для таблицы products колонка supplier_id является внешним ключом),
+<em>Соединение таблиц происходит по внешнему ключу, далее выбираются колонки, которые необходимо вывести из обеих таблиц.</em>
+
+```sql
+SELECT products.product_name, suppliers.company_name, products.units_in_stock
+FROM products
+INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;
+```
+
+<b>LEFT / RIGHT JOIN</b>
+Вывести количество записей из таблицы employees и объединить с таблицей orders по внешнему ключу employee_id:
+(LEFT JOIN выведет все данные из левой таблицы и только совпадающие из правой. RIGHT JOIN работает обратным образом)
+
+```sql
+SELECT COUNT(*)
+FROM employees
+LEFT JOIN orders ON orders.employee_id = employees.employee_id;
+```

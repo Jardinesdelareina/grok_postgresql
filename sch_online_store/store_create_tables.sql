@@ -41,7 +41,7 @@ CREATE TABLE users_addresses
 
 
 CREATE TABLE orders
-(
+(Ё
     order_id SERIAL PRIMARY KEY,
     fk_user_id INTEGER REFERENCES users(user_id),
     order_date TIMESTAMP NOT NULL
