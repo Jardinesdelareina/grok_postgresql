@@ -44,8 +44,8 @@ SELECT order_date, order_id FROM orders WHERE order_date BETWEEN '1997-01-01' AN
 
 ##### Выборка по совпадениям
 Вывести те данные из customer_id и company_name из таблицы customers, где в названии customers_id в середине присутствует символ 'A':
-('%A' - если customer_id оканчивается на 'A',
-'A%'- если customer_id начинается на 'A')
+
+('%A' - если customer_id оканчивается на 'A', 'A%'- если customer_id начинается на 'A')
 ```sql
 SELECT customer_id, company_name FROM customers WHERE customer_id LIKE '%A%';
 ```
@@ -94,6 +94,7 @@ SELECT country, COUNT(*) FROM employees GROUP BY country;
 
 ##### Фильтрация результатов
 Вывести category_id и сумму произведений unit_price и units_in_stock в таблице products, сгруппировав результаты по category_id (сколько суммарно вышло sum_price на каждый category_id) и отфильтровав результаты (вывести только те category_id), где SUM(unit_price * units_in_stock) больше 5000:
+
 (работает в сочетании с GROUP BY)
 ```sql
 SELECT category_id, SUM(unit_price * units_in_stock) AS sum_price
@@ -104,8 +105,8 @@ HAVING SUM(unit_price * units_in_stock) > 5000;
 
 ##### Объединение
 Вывести country из таблицы employees, country из таблицы customers и объединить результаты в одну колонку:
-(UNION устраняет дубликаты,
-UNION ALL выводит результат с дубликатами)
+
+(UNION устраняет дубликаты, UNION ALL выводит результат с дубликатами)
 ```sql
 SELECT country FROM employees
 UNION
@@ -131,7 +132,9 @@ SELECT country FROM suppliers;
 ##### Соединение
 <b>INNER JOIN</b> 
 Вывести product_name и units_in_stock из products и company_name из suppliers, левая таблица - products, правая - suppliers, соединить их по колонке supplier_id, одинаковой для обеих таблиц:
-(для таблицы products колонка supplier_id является внешним ключом),
+
+(для таблицы products колонка supplier_id является внешним ключом)
+
 <em>Соединение таблиц происходит по внешнему ключу, далее выбираются колонки, которые необходимо вывести из обеих таблиц.</em>
 
 ```sql
@@ -142,6 +145,7 @@ INNER JOIN suppliers ON products.supplier_id = suppliers.supplier_id;
 
 <b>LEFT / RIGHT JOIN</b>
 Вывести количество записей из таблицы employees и объединить с таблицей orders по внешнему ключу employee_id:
+
 (LEFT JOIN выведет все данные из левой таблицы и только совпадающие из правой. RIGHT JOIN работает обратным образом)
 
 ```sql
@@ -153,6 +157,7 @@ LEFT JOIN orders ON orders.employee_id = employees.employee_id;
 ##### Синтаксические конструкции USING и NATURAL при соединениях
 
 <b>USING</b> берет наименование колонки, одинаковое для двух таблиц, по которой идет соединение.
+
 <b>NATURAL</b> соединение происходит по всем одинаково проименованным колонкам.
 
 ```sql
@@ -169,6 +174,7 @@ NATURAL JOIN suppliers
 
 ##### Подзапросы
 Вывести те company_name из suppliers, country которых есть среди country из таблицы customers:
+
 (Подзапросы часто можно заменить соединениями таблиц, но это возможно не всегда, а когда возможно, нужно ориентироваться на производительность запросов и их читабельность)
 ```sql
 SELECT company_name
@@ -179,6 +185,7 @@ WHERE country IN (SELECT country
 
 <b>WHERE EXISTS</b>
 Вывести company_name и contact_name из customers, если соблюдено условие в подзапросе (Вывести customer_id из orders, где customer_id в таблицах orders и customers совпадает, и где freight находится в заданном диапазоне):
+
 (EXISTS (или NOT EXISTS) возвращает True или False. Если True, то внешний запрос выводит выборку данных, если False то данных нет)
 
 ```sql
@@ -192,6 +199,7 @@ WHERE EXISTS (SELECT customer_id
 
 <b>ANY / ALL</b>
 Вывести company_name из customers, где customer_id равен НЕКОТОРЫМ из выборки в подзапросе (вывести customer_id из orders, соединив таблицы orders и order_details по order_id, где quantity больше 40):
+
 (ANY - некоторые, ALL - все)
 
 ```sql
