@@ -202,3 +202,19 @@ WHERE customer_id = ANY(SELECT customer_id
                         JOIN order_details USING(order_id)
                         WHERE quantity > 40)
 ```
+
+### DDL (Data Difinition Language)
+
+`CREATE TABLE table_name`   создать таблицу
+
+`ALTER TABLE table_name`    изменить таблицу
+    * `ADD COLUMN column_name data_type`  изменить колонку (с типом данных)
+    * `RENAME TO new_table_name`     переименовать таблицу
+    * `RENAME old_column_name TO new_column_name`   переименовать колонку
+    * `ALTER COLUMN column_name SET DAtA TYPE data_type`    задать новый тип данных для колонки
+
+`DROP TABLE table_name`    удалить таблицу
+
+`TRUNCAtE TABLE table_name`     очистить таблицу от данных
+
+`DROP COLUMN column_name`       удалить колонку   
