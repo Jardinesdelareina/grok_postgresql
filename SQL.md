@@ -223,7 +223,7 @@ WHERE customer_id = ANY(SELECT customer_id
 
 `DROP TABLE table_name`    удалить таблицу
 
-`TRUNCAtE TABLE table_name`     очистить таблицу от данных
+`TRUNCATE TABLE table_name`     очистить таблицу от данных
 
 `DROP COLUMN column_name`       удалить колонку   
 
@@ -241,3 +241,35 @@ ALTER TABLE ONLY orders
 ALTER TABLE ONLY categories
     ADD CONSTRAINT pk_categories PRIMARY KEY (category_id);
 ```
+
+Изменить таблицу, добавить условие CHECK для атрибута:
+```sql
+ALTER TABLE product
+    ADD COLUMN price DECIMAL CONSTRAINT CHK_product_price CHECK (price >= 0);
+```
+
+##### Автоинкремент
+В PostgreSQL более ранних версий, чем 9 в качестве автоинкремента используется тип SERIAL. В последних версиях наиболее предпочтительна следующая конструкция:
+
+```sql
+CREATE TABLE new_table
+(
+    column_id INT GENERATED ALWAYS AS IDENTITY (START WITH 0 INCREMENT BY 1) NOT NULL
+);
+```
+
+
+##### UPDATE
+Изменить в таблице table_name в колонке column_name атрибут с id 5:
+```sql
+UPDATE table_name
+SET column_name
+WHERE id = 5;
+```
+
+##### DELETE
+Удалить из таблицы table_name данные, где rating < 50:
+```sql
+DELETE FROM table_name
+WHERE rating < 50;
+``` 
