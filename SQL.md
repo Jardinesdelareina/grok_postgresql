@@ -226,3 +226,18 @@ WHERE customer_id = ANY(SELECT customer_id
 `TRUNCAtE TABLE table_name`     очистить таблицу от данных
 
 `DROP COLUMN column_name`       удалить колонку   
+
+
+Изменить таблицу и добавить в нее внешний ключ:
+
+(ключевое слово ONLY прямо указывает, что изменения относятся только к указанной таблице)
+```sql
+ALTER TABLE ONLY orders
+    ADD CONSTRAINT fk_orders_customers FOREIGN KEY (customer_id) REFERENCES customers;
+```
+
+Изменить таблицу и назначить для атрибута PRIMARY KEY:
+```sql
+ALTER TABLE ONLY categories
+    ADD CONSTRAINT pk_categories PRIMARY KEY (category_id);
+```
