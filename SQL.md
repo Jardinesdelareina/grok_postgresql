@@ -314,3 +314,25 @@ SELECT * FROM myview;
 * Во VIEW используется только одна таблица в секции FROM,
 * Во VIEW не используется DISTINCT, GROUP BY, HAVING, UNION, INTERSECT, EXCEPT, LIMIT
 * Во VIEW не используются оконные функции MIN, MAX, SUM, COUNT, AVG
+
+
+### CASE / WHEN
+
+Вывести product_name, unit_price, unit_in_stock из таблицы products, и в зависимости от поставленных условий, в отдельную колонку amount выводить текстовые сообщения 'lots of', 'average' и 'low number':
+```sql
+SELECT product_name, unit_price, unit_in_stock
+    CASE WHEN unit_in_stock >= 100 THEN 'lots of'
+         WHEN unit_in_stock > 50 AND unit_in_stock < 100 THEN 'average'
+         WHEN unit_in_stock < 50 THEN 'low number'
+         ELSE 'unknown'
+    END AS amount
+FROM products;
+```
+
+### COALESCE
+
+Вывести order_id, order_date и обработанную колонку ship_region таки образом, что будут отображены значения не NULL, а значения NULL будут заменены строкой 'нет данных';
+```sql
+SELECT order_id, order_date, COALESCE(ship_region, 'нет данных') AS ship_region
+FROM orders;
+```
