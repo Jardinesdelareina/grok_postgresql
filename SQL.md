@@ -336,3 +336,31 @@ FROM products;
 SELECT order_id, order_date, COALESCE(ship_region, 'нет данных') AS ship_region
 FROM orders;
 ```
+
+### Функции
+
+* SQL-функции
+* Процедурные (pl/pgSQL функции)
+* Серверные функции (написанные на C)
+* Собственные C-функции
+
+Простая скалярная функция
+```sql
+-- Синтаксис функции
+CREATE OR REPLACE FUNCTION total_price() RETURNS DOUBLE PRECISION AS $$
+	SELECT SUM(unit_price * units_in_stock) AS total
+	FROM products
+$$ LANGUAGE SQL;
+
+-- Вызов функции
+SELECT total_price() AS total_price_products;
+```
+
+Функция с аргументами
+```sql
+CREATE OR REPLACE FUNCTION get_product_price_by_name(p_price VARCHAR) RETURNS DOUBLE PRECISION AS $$
+	SELECT unit_price
+	FROM products
+	WHERE product_name = prod_name
+$$ LANGUAGE SQL;
+```
