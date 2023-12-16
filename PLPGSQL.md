@@ -24,4 +24,44 @@ CREATE OR REPLACE FUNCTION calc_sum(a INTEGER, b INTEGER)
         sum;            -- Возвращение переменной (функция calc_sum() возвращает переменную sum) 
     END
 $$ LANGUAGE plpgsql;
+
+SELECT calc_sum(5, 3);  -- Вызов функции
+```
+
+### SETOF
+
+Ключевое слово <b>SETOF</b> в функциях SQL указывает, что функция возвращает набор значений, то есть результатом функции будет таблица или набор строк. В примере функция вернет набор значений типа users (что является таблицей, или, иначе говоря в данной ситуации - пользовательским типом данных):
+```sql
+CREATE FUNCTION get_users() 
+        RETURNS SETOF users AS $$
+    BEGIN
+    RETURN QUERY SELECT * FROM users;
+    END;
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM get_users();      -- Возвращает все значения из таблицы users
+```
+
+### IF ELSE
+
+Условная конструкция, синтаксис функций pl/pgSQL:
+```sql
+CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC) 
+        RETURNS TEXT AS $$
+    DECLARE
+        result TEXT;
+    BEGIN
+        IF grade >= 90 THEN
+            result := 'A';
+        ELSEIF grade >= 80 THEN     -- Допустимый синтаксис ELSIF и ELSEIF
+            result := 'B';
+        ELSIF grade >= 70 THEN
+            result := 'C';
+        ELSE
+            result := 'F';
+        END IF;
+        
+        RETURN result;
+    END;
+$$ LANGUAGE plpgsql;
 ```
