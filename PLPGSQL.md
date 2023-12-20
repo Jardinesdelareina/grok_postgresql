@@ -65,3 +65,52 @@ CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC)
     END;
 $$ LANGUAGE plpgsql;
 ```
+
+### Циклы
+
+1.  Цикл продолжается до тех пор, пока условие равно TRUE:
+    <b>WHILE</b> [условие, результат которого TRUE]
+    <b>LOOP</b>
+        [логика]
+    <b>END LOOP;</b>
+
+2.  Цикл продолжается до тех пор, пока условие EXIT WHEN равно FALSE. Если условие TRUE, цикл разрывается:
+    <b>LOOP</b>
+        <b>EXIT WHEN</b> [условие, результат которого TRUE]
+        [логика]
+    <b>END LOOP;</b>
+
+3.  Цикл повторяется определенное количество раз (от <b>a</b> до <b>b</b> раз). Необязательный оператор <b>BY</b> определяет шаг.
+    <b>FOR</b> [счетчик] <b>IN</b> a..b [<b>BY</b> x]
+    <b>LOOP</b>
+        [логика]
+    <b>END LOOP;</b>
+
+4.  Конструкция <b>CONTINUE</b> прерывает исполнение логики при определенных условиях, цикл переходит к следующей итерации:
+    <b>CONTINUE WHEN</b> [условие]
+
+
+Функция, расчитывающая число Фибоначчи с помощью цикла:
+```sql
+CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
+    DECLARE
+        counter INTEGER = 0;
+        i INTEGER = 0;
+        j INTEGER = 1;
+    BEGIN
+        IF x < 1 THEN
+            RETURN 0;
+        END IF;
+
+        WHILE counter < x
+        LOOP
+            counter = counter + 1;
+            SELECT j, i + j INTO i, j;
+        END LOOP;
+		
+		RETURN i;
+    END;     
+$$ LANGUAGE plpgsql;
+
+SELECT fib(5);
+```
