@@ -70,40 +70,36 @@ $$ LANGUAGE plpgsql;
 
 1.  Цикл продолжается до тех пор, пока условие равно TRUE:
 
-    <b>WHILE</b> [условие, результат которого TRUE]
-    
-    <b>LOOP</b>
-    
-        [логика]
-    
-    <b>END LOOP;</b>
-
+    ```sql
+    WHILE extencion
+    LOOP
+        --logic
+    END LOOP;
+    ```
 
 2.  Цикл продолжается до тех пор, пока условие EXIT WHEN равно FALSE. Если условие TRUE, цикл разрывается:
 
-    <b>LOOP</b>
-
-        <b>EXIT WHEN</b> [условие, результат которого TRUE]
-
-        [логика]
-
-    <b>END LOOP;</b>
-
+    ```sql
+    LOOP
+        EXIT WHEN extencion
+        --logic
+    END LOOP;
+    ```
 
 3.  Цикл повторяется определенное количество раз (от <b>a</b> до <b>b</b> раз). Необязательный оператор <b>BY</b> определяет шаг.
 
-    <b>FOR</b> [счетчик] <b>IN</b> a..b [<b>BY</b> x]
-
-    <b>LOOP</b>
-
-        [логика]
-
-    <b>END LOOP;</b>
-
-
+    ```sql
+    FOR counter IN a..b BY x
+    LOOP
+        --logic
+    END LOOP;
+    ```
+    
 4.  Конструкция <b>CONTINUE</b> прерывает исполнение логики при определенных условиях, цикл переходит к следующей итерации:
 
-    <b>CONTINUE WHEN</b> [условие]
+    ```sql
+    CONTINUE WHEN extencion;
+    ```
 
 
 Функция, расчитывающая число Фибоначчи с помощью цикла:
