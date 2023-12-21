@@ -126,6 +126,3 @@ $$ LANGUAGE plpgsql;
 
 SELECT fib(5);
 ```
-
-### RETURN NEXT
-
