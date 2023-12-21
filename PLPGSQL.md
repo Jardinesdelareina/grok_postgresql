@@ -71,7 +71,7 @@ $$ LANGUAGE plpgsql;
 1.  Цикл продолжается до тех пор, пока условие равно TRUE:
 
     ```sql
-    WHILE extencion
+    WHILE expression
     LOOP
         --logic
     END LOOP;
@@ -81,7 +81,7 @@ $$ LANGUAGE plpgsql;
 
     ```sql
     LOOP
-        EXIT WHEN extencion
+        EXIT WHEN expression
         --logic
     END LOOP;
     ```
@@ -98,7 +98,7 @@ $$ LANGUAGE plpgsql;
 4.  Конструкция <b>CONTINUE</b> прерывает исполнение логики при определенных условиях, цикл переходит к следующей итерации:
 
     ```sql
-    CONTINUE WHEN extencion;
+    CONTINUE WHEN expression;
     ```
 
 
@@ -126,3 +126,6 @@ $$ LANGUAGE plpgsql;
 
 SELECT fib(5);
 ```
+
+### RETURN NEXT
+
