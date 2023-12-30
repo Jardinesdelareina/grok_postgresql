@@ -27,7 +27,7 @@ CREATE TABLE users
     date_of_birdth DATE,
     about TEXT,
     avatar TEXT,
-    is_superuser BOOLEAN,
+    is_superuser BOOLEAN DEFAULT ,
 
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
