@@ -136,3 +136,12 @@ CREATE TABLE orders_dishes
     fk_order_id INTEGER REFERENCES orders(order_id),
     fk_dish_id INTEGER REFERENCES dishes(dish_id)
 );
+
+
+/*
+    Индексы
+*/
+
+CREATE INDEX idx_address_customers ON addresses (address_street, address_house);
+CREATE INDEX idx_phone_customers ON customers (customer_phone);
+CREATE INDEX idx_dish ON dishes (dish_title);
