@@ -91,7 +91,8 @@
 `#bonjour_name = ''`	имя компьютера в протоколе Bonjour по-умолчанию.
 
 
-### - TCP Настройки -
+##### - TCP Настройки -
+
 Данные настройки относятся к TCP keepalive-механизму, который активируется для поддержания активного соединения между клиентом и сервером базы данных PostgreSQL.
 
 `#tcp_keepalives_idle = 0`	задает время в секундах без активности, после которого TCP-соединение считается неактивным и отправляются keepalive-сообщения. Значение 0 отключает использование keepalive-сообщений.
@@ -105,7 +106,7 @@
 `#client_connection_check_interval = 0`	определяет интервал времени (в секундах), через который сервер будет проверять активность клиентских соединений. Если клиент не отправляет или не получает данные в течение указанного интервала, сервер может считать соединение неактивным и закрыть его. Значение 0 означает отключение этой проверки.
 
 
-# - Аутентификация -
+###### - Аутентификация -
 
 `#authentication_timeout = 1min`	(1s-600s) указывает время ожидания сервера для аутентификации пользователя в минутах. Если сервер не получает ответ от клиента в течение указанного времени, то соединение будет разорвано.
 
@@ -114,26 +115,41 @@
 `#db_user_namespace = off`	определяет, будут ли имена пользователей связаны с именами баз данных. Если значение "off", то имена пользователей могут быть одинаковыми в разных базах данных. Если значение "on", то имена пользователей должны быть уникальными в пределах каждой базы данных.
 
 
-# GSSAPI using Kerberos
-#krb_server_keyfile = 'FILE:${sysconfdir}/krb5.keytab'
-#krb_caseins_users = off
+<b>GSSAPI/Kerberos</b>
+Начиная с версии 12, PostgreSQL поддерживает авторизацию с использованием GSSAPI/Kerberos. Эта функциональность позволяет клиентам аутентифицироваться на сервере PostgreSQL с использованием Kerberos-токенов, удобно интегрируясь с существующей инфраструктурой безопасности.
 
-# - SSL -
+`#krb_server_keyfile = 'FILE:${sysconfdir}/krb5.keytab'`	определяет местоположение ключевого файла сервера Kerberos, который содержит необходимые ключи шифрования для аутентификации.
 
-ssl = on
-#ssl_ca_file = ''
-ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'
-#ssl_crl_file = ''
-#ssl_crl_dir = ''
-ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'
-#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL' # allowed SSL ciphers
-#ssl_prefer_server_ciphers = on
-#ssl_ecdh_curve = 'prime256v1'
-#ssl_min_protocol_version = 'TLSv1.2'
-#ssl_max_protocol_version = ''
-#ssl_dh_params_file = ''
-#ssl_passphrase_command = ''
-#ssl_passphrase_command_supports_reload = off
+После включения авторизации GSSAPI/Kerberos в файле postgresql.conf, вы также должны настроить файл pg_hba.conf для определения правил аутентификации с использованием GSSAPI/Kerberos. Например:
+
+```
+# IPv4 local connections:
+host    all             all             127.0.0.1/32             gss     include_realm=0
+```
+
+Здесь `gss` - это специальный тип аутентификации, позволяющий клиентам использовать GSSAPI/Kerberos для аутентификации. Вы можете определить различные правила для разных хостов, пользователей и баз данных.
+
+`#krb_caseins_users = off`	используется для указания того, должен ли Kerberos учитывать регистр символов при аутентификации пользователей.
+
+Когда этот параметр установлен в значение off, Kerberos будет регистронезависимым при поиске пользователей для аутентификации. Это означает, что пользователь с именем "John" сможет аутентифицироваться как "john" или "JOHN". Если параметр установлен в значение on, то регистр символов будет учитываться при аутентификации, и пользователь "John" не сможет использовать "john" или "JOHN" для входа.
+
+
+##### - SSL -
+
+`ssl = on`
+`#ssl_ca_file = ''`
+`ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'`
+`#ssl_crl_file = ''`
+`#ssl_crl_dir = ''`
+`ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'`
+`#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'`
+`#ssl_prefer_server_ciphers = on`
+`#ssl_ecdh_curve = 'prime256v1'`
+`#ssl_min_protocol_version = 'TLSv1.2'`
+`#ssl_max_protocol_version = ''`
+`#ssl_dh_params_file = ''`
+`#ssl_passphrase_command = ''`
+`#ssl_passphrase_command_supports_reload = off`
 
 
 #------------------------------------------------------------------------------
