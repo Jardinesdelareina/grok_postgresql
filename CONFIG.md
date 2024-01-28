@@ -136,12 +136,14 @@ host    all             all             127.0.0.1/32             gss     include
 
 ##### - SSL -
 
-`ssl = on`
+Настройка SSL (Secure Sockets Layer) позволяет обеспечить защищенное соединение между клиентами и сервером PostgreSQL.
+
+`ssl = on`	включение SSL.
 `#ssl_ca_file = ''`
-`ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'`
+`ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'`	путь к сертификату сервера.
 `#ssl_crl_file = ''`
 `#ssl_crl_dir = ''`
-`ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'`
+`ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'`	путь к приватному ключу сервера.
 `#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'`
 `#ssl_prefer_server_ciphers = on`
 `#ssl_ecdh_curve = 'prime256v1'`
@@ -152,82 +154,100 @@ host    all             all             127.0.0.1/32             gss     include
 `#ssl_passphrase_command_supports_reload = off`
 
 
-#------------------------------------------------------------------------------
-# RESOURCE USAGE (except WAL)
-#------------------------------------------------------------------------------
+--------------------------------------
+### ИСПОЛЬЗОВАНИЕ РЕСУРСОВ (кроме WAL)
+--------------------------------------
 
-# - Memory -
+##### - Память -
 
-shared_buffers = 128MB			# min 128kB
-					# (change requires restart)
-#huge_pages = try			# on, off, or try
-					# (change requires restart)
-#huge_page_size = 0			# zero for system default
-					# (change requires restart)
-#temp_buffers = 8MB			# min 800kB
-#max_prepared_transactions = 0		# zero disables the feature
-					# (change requires restart)
-# Caution: it is not advisable to set max_prepared_transactions nonzero unless
-# you actively intend to use prepared transactions.
-#work_mem = 4MB				# min 64kB
-#hash_mem_multiplier = 1.0		# 1-1000.0 multiplier on hash table work_mem
-#maintenance_work_mem = 64MB		# min 1MB
-#autovacuum_work_mem = -1		# min 1MB, or -1 to use maintenance_work_mem
-#logical_decoding_work_mem = 64MB	# min 64kB
-#max_stack_depth = 2MB			# min 100kB
-#shared_memory_type = mmap		# the default is the first option
-					# supported by the operating system:
-					#   mmap
-					#   sysv
-					#   windows
-					# (change requires restart)
-dynamic_shared_memory_type = posix	# the default is the first option
-					# supported by the operating system:
-					#   posix
-					#   sysv
-					#   windows
-					#   mmap
-					# (change requires restart)
-#min_dynamic_shared_memory = 0MB	# (change requires restart)
+`shared_buffers = 128MB`	отвечает за выделение оперативной памяти для работы с общим буфером Postgres. Общий буфер используется для кэширования данных, что может повысить производительность базы данных.
 
-# - Disk -
+`#huge_pages = try`	относится к использованию "огромных страниц" (huge pages) в операционной системе. Огромные страницы являются особенным типом памяти, который обладает некоторыми преимуществами в производительности. Однако, наличие поддержки огромных страниц и их корректная настройка зависит от операционной системы и настройки системы. Значение `try` указывает PostgreSQL попробовать использовать огромные страницы, если они доступны на системе.
 
-#temp_file_limit = -1			# limits per-process temp file space
-					# in kilobytes, or -1 for no limit
+`#huge_page_size = 0`	определяет размер hugepages в байтах. Значение 0 означает, что размер hugepages будет автоматически настроен на оптимальное значение операционной системы.
 
-# - Kernel Resources -
+`#temp_buffers = 8MB`	указывает количество памяти, выделяемой для временных объектов, таких как временные таблицы или сортировочные структуры данных, в оперативной памяти. Значение 8MB указывает, что выделено 8 мегабайт оперативной памяти для временных объектов.
 
-#max_files_per_process = 1000		# min 64
-					# (change requires restart)
+`#max_prepared_transactions = 0`	определяет максимальное количество предварительно подготовленных транзакций, которые могут быть активными одновременно. Значение 0 указывает, что предварительно подготовленные транзакции не включены, и PostgreSQL не будет их использовать. Не рекомендуется устанавливать значение ненулевым, если только вы активно намерены использовать подготовленные транзакции.
 
-# - Cost-Based Vacuum Delay -
+`#work_mem = 4MB`	определяет максимальный объем памяти, который может быть использован для операций сортировки и хеш-таблиц внутри PostgreSQL.
 
-#vacuum_cost_delay = 0			# 0-100 milliseconds (0 disables)
-#vacuum_cost_page_hit = 1		# 0-10000 credits
-#vacuum_cost_page_miss = 2		# 0-10000 credits
-#vacuum_cost_page_dirty = 20		# 0-10000 credits
-#vacuum_cost_limit = 200		# 1-10000 credits
+`#hash_mem_multiplier = 1.0`	определяет множитель, используемый для вычисления отведенной памяти для хеш-таблиц. Значение 1.0 означает, что выделенная память будет равна `work_mem`, а более высокие значения увеличивают отведенную память.
 
-# - Background Writer -
+`#maintenance_work_mem = 64MB`	определяет объем памяти, который будет использован для операций обслуживания, таких как перестроение индексов или выполнение команды `VACUUM`.
 
-#bgwriter_delay = 200ms			# 10-10000ms between rounds
-#bgwriter_lru_maxpages = 100		# max buffers written/round, 0 disables
-#bgwriter_lru_multiplier = 2.0		# 0-10.0 multiplier on buffers scanned/round
-#bgwriter_flush_after = 512kB		# measured in pages, 0 disables
+`#autovacuum_work_mem = -1`	определяет объем памяти, который будет использован для операций автоматического обслуживания (автовакуумирования), если не указан явно. Значение -1 означает, что будет использовано значение `maintenance_work_mem`.
 
-# - Asynchronous Behavior -
+`#logical_decoding_work_mem = 64MB`	определяет объем памяти, который будет использован для операций дешифровки логического журнала при использовании логического декодирования.
 
-#backend_flush_after = 0		# measured in pages, 0 disables
-#effective_io_concurrency = 1		# 1-1000; 0 disables prefetching
-#maintenance_io_concurrency = 10	# 1-1000; 0 disables prefetching
-#max_worker_processes = 8		# (change requires restart)
-#max_parallel_workers_per_gather = 2	# taken from max_parallel_workers
-#max_parallel_maintenance_workers = 2	# taken from max_parallel_workers
-#max_parallel_workers = 8		# maximum number of max_worker_processes that
-					# can be used in parallel operations
-#parallel_leader_participation = on
-#old_snapshot_threshold = -1		# 1min-60d; -1 disables; 0 is immediate
-					# (change requires restart)
+`#max_stack_depth = 2MB`	определяет максимальную глубину стека для каждого запроса. Это значение должно быть достаточным для выполнения ваших запросов, но слишком большие значения могут привести к исчерпанию памяти на сервере.
+
+`#shared_memory_type = mmap`	определяет тип разделяемой памяти, используемой PostgreSQL (mmap, sysv, windows).
+
+`dynamic_shared_memory_type = posix`	определяет тип динамической разделяемой памяти, используемой PostgreSQL (posix, sysv, windows, mmap).
+
+`#min_dynamic_shared_memory = 0MB`	определяет минимальный объем памяти, выделяемой для динамической разделяемой памяти. Значение 0 указывает на отсутствие минимального объема памяти.
+
+
+##### - Диск -
+
+`#temp_file_limit = -1`	устанавливает предел размера временных файлов, которые могут использоваться сервером PostgreSQL. Значение -1 означает, что предел не ограничен.
+
+
+##### - Ресурсы ядра (Kernel Resources) -
+
+`#max_files_per_process = 1000`	(минимум 64) определяет максимальное количество файлов, которые может открыть каждый процесс сервера PostgreSQL. Каждое открытое соединение с базой данных и каждая активная транзакция требуют соответствующего количества открытых файлов. 
+
+
+##### - Cost-Based Vacuum Delay -
+
+Данные настройки отвечают за контроль над задержкой и затратами, связанными с операцией VACUUM.
+
+`#vacuum_cost_delay = 0`	(0-100 милисекунд) определяет задержку между итерациями операции VACUUM в миллисекундах. Значение 0 означает, что задержка отключена. Большее значение приведет к большей задержке между итерациями.
+
+`#vacuum_cost_page_hit = 1`	(0-10000 credits) определяет затраты, связанные с чтением из кэша страницы.
+
+`#vacuum_cost_page_miss = 2`	(0-10000 credits) определяет затраты, связанные с чтением страницы, отсутствующей в кэше.
+
+`#vacuum_cost_page_dirty = 20`	(0-10000 credits) определяет затраты на запись измененной страницы.
+
+`#vacuum_cost_limit = 200`	(1-10000 credits) пределяет пороговое значение, после которого VACUUM будет считать стоимость операции слишком высокой и прекратит выполнение.
+
+
+##### - Background Writer -
+
+Эти настройки отвечают за управление фоновым процессом, который выполняет запись данных из shared_buffers (оперативной памяти) на диск. 
+
+`#bgwriter_delay = 200ms`	(10-10000ms) задает задержку между запусками фонового процесса записи в миллисекундах. Значение 200ms означает, что фоновый процесс будет запускаться каждые 200 миллисекунд.
+
+`#bgwriter_lru_maxpages = 100`	указывает максимальное количество страниц, которые фоновый процесс может записать за одну итерацию. Значение 100 означает, что фоновый процесс не будет записывать более 100 страниц за раз.
+
+`#bgwriter_lru_multiplier = 2.0`	управляет тем, как быстро фоновый процесс увеличивает количество записываемых страниц при недостаточном объеме доступной памяти. Значение 2.0 означает, что количество записываемых страниц будет удваиваться при каждой следующей итерации.
+
+`#bgwriter_flush_after = 512kB`	указывает объем измененных данных, после которого фоновый процесс выполнит запись на диск. Значение 512kB означает, что запись будет выполняться после накопления 512 килобайт данных.
+
+
+# - Асинхронное поведение (Asynchronous Behavior) -
+
+Настройки Asynchronous Behavior регулируют поведение и конфигурацию работы с асинхронными операциями в PostgreSQL.
+
+`#backend_flush_after = 0`	определяет пороговое значение для сброса изменений буферизованных данных в файловую систему. Значение 0 отключает данную опцию.
+
+`#effective_io_concurrency = 1`	(1-1000) определяет количество одновременных операций ввода-вывода, которые PostgreSQL может выполнять для одного клиента. Значение 1 означает отсутствие параллельных операций, 0 отключает предварительную выборку.
+
+`#maintenance_io_concurrency = 10`	(1-1000) определяет количество одновременных операций ввода-вывода, которые PostgreSQL может выполнять во время процессов обслуживания и обслуживания таблиц. Значение 10 предоставляет 10 параллельных операций, 0 отключает предварительную выборку.
+
+`#max_worker_processes = 8`	определяет максимальное количество рабочих процессов (worker processes), которые могут выполняться в PostgreSQL.
+
+`#max_parallel_workers_per_gather = 2`	определяет максимальное количество параллельных рабочих процессов, которые могут быть запущены во время операции сбора данных (gather operation).
+
+`#max_parallel_maintenance_workers = 2`	определяет максимальное количество параллельных рабочих процессов, которые могут использоваться в процессах обслуживания и обслуживания таблиц.
+
+`#max_parallel_workers = 8`	определяет максимальное общее количество параллельных рабочих процессов, которые могут быть запущены одновременно.
+
+`#parallel_leader_participation = on`	определяет, будет ли лидер (leader) параллельной операции активно участвовать в выполнении операции или будет выполнять только роль координатора.
+
+`#old_snapshot_threshold = -1`	(1min-60d) определяет пороговое время в миллисекундах, после которого должен быть сгенерирован новый снимок для транзакций, которые дольше этого времени.
 
 
 #------------------------------------------------------------------------------
