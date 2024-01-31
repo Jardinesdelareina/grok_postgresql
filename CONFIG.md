@@ -139,19 +139,32 @@ host    all             all             127.0.0.1/32             gss     include
 Настройка SSL (Secure Sockets Layer) позволяет обеспечить защищенное соединение между клиентами и сервером PostgreSQL.
 
 `ssl = on`	включение SSL.
-`#ssl_ca_file = ''`
+
+`#ssl_ca_file = ''`	путь к файлу корневого сертификата (CA) для проверки цепочки сертификатов сервера.
+
 `ssl_cert_file = '/etc/ssl/certs/ssl-cert-snakeoil.pem'`	путь к сертификату сервера.
-`#ssl_crl_file = ''`
-`#ssl_crl_dir = ''`
+
+`#ssl_crl_file = ''`	путь к файлу отзыва (CRL) для проверки статуса сертификатов сервера.
+
+`#ssl_crl_dir = ''`	каталог, в котором содержатся файлы отзыва для проверки статуса сертификатов сервера.
+
 `ssl_key_file = '/etc/ssl/private/ssl-cert-snakeoil.key'`	путь к приватному ключу сервера.
-`#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'`
-`#ssl_prefer_server_ciphers = on`
-`#ssl_ecdh_curve = 'prime256v1'`
-`#ssl_min_protocol_version = 'TLSv1.2'`
-`#ssl_max_protocol_version = ''`
-`#ssl_dh_params_file = ''`
-`#ssl_passphrase_command = ''`
-`#ssl_passphrase_command_supports_reload = off`
+
+`#ssl_ciphers = 'HIGH:MEDIUM:+3DES:!aNULL'`	список шифров, поддерживаемых SSL соединением сервера с клиентом.
+
+`#ssl_prefer_server_ciphers = on`	указывает использовать приоритет SSL шифров сервера перед клиентскими шифрами.
+
+`#ssl_ecdh_curve = 'prime256v1'`	Указывает используемую кривую эллиптической криптографии для обмена ключами ECDH.
+
+`#ssl_min_protocol_version = 'TLSv1.2'`	минимальная поддерживаемая версия протокола SSL/TLS.
+
+`#ssl_max_protocol_version = ''`	максимальная поддерживаемая версия протокола SSL/TLS.
+
+`#ssl_dh_params_file = ''`	путь к файлу параметров алгоритма Диффи-Хеллмана для SSL.
+
+`#ssl_passphrase_command = ''`	команда, используемая для получения пароля приватного ключа сертификата с помощью внешней программы.
+
+`#ssl_passphrase_command_supports_reload = off`	определяет, поддерживает ли внешняя программа команду перезагрузки или сброса пароля.
 
 
 --------------------------------------
@@ -227,7 +240,7 @@ host    all             all             127.0.0.1/32             gss     include
 `#bgwriter_flush_after = 512kB`	указывает объем измененных данных, после которого фоновый процесс выполнит запись на диск. Значение 512kB означает, что запись будет выполняться после накопления 512 килобайт данных.
 
 
-# - Асинхронное поведение (Asynchronous Behavior) -
+##### - Асинхронное поведение (Asynchronous Behavior) -
 
 Настройки Asynchronous Behavior регулируют поведение и конфигурацию работы с асинхронными операциями в PostgreSQL.
 
@@ -250,40 +263,44 @@ host    all             all             127.0.0.1/32             gss     include
 `#old_snapshot_threshold = -1`	(1min-60d) определяет пороговое время в миллисекундах, после которого должен быть сгенерирован новый снимок для транзакций, которые дольше этого времени.
 
 
-#------------------------------------------------------------------------------
-# WRITE-AHEAD LOG
-#------------------------------------------------------------------------------
+---------------------------------------------------
+### ЖУРНАЛ ПРЕДВАРИТЕЛЬНОЙ ЗАПИСИ (WRITE-AHEAD LOG)
+---------------------------------------------------
 
-# - Settings -
+Настройки WRITE-AHEAD LOG отвечают за параметры журнала записи (Write-Ahead Log, WAL). Журнал записи используется для обеспечения целостности данных и восстановления после сбоев системы.
 
-#wal_level = replica			# minimal, replica, or logical
-					# (change requires restart)
-#fsync = on				# flush data to disk for crash safety
-					# (turning this off can cause
-					# unrecoverable data corruption)
-#synchronous_commit = on		# synchronization level;
-					# off, local, remote_write, remote_apply, or on
-#wal_sync_method = fsync		# the default is the first option
-					# supported by the operating system:
-					#   open_datasync
-					#   fdatasync (default on Linux and FreeBSD)
-					#   fsync
-					#   fsync_writethrough
-					#   open_sync
-#full_page_writes = on			# recover from partial page writes
-#wal_log_hints = off			# also do full page writes of non-critical updates
-					# (change requires restart)
-#wal_compression = off			# enable compression of full-page writes
-#wal_init_zero = on			# zero-fill new WAL files
-#wal_recycle = on			# recycle WAL files
-#wal_buffers = -1			# min 32kB, -1 sets based on shared_buffers
-					# (change requires restart)
-#wal_writer_delay = 200ms		# 1-10000 milliseconds
-#wal_writer_flush_after = 1MB		# measured in pages, 0 disables
-#wal_skip_threshold = 2MB
+##### - Settings -
 
-#commit_delay = 0			# range 0-100000, in microseconds
-#commit_siblings = 5			# range 1-1000
+`#wal_level = replica`	(minimal, replica, или logical) устанавливает минимальный уровень записи в журнале, необходимый для репликации. В данном случае, запись в журнал осуществляется на уровне, достаточном для репликации на другие серверы.
+
+`#fsync = on`	указывает PostgreSQL вызывать функцию fsync() (сбросить данные на диск для безопасности при сбоях) после каждого записывания в журнал и данных, чтобы гарантировать сохранность данных даже в случае сбоя. Отключение этого параметра может привести к
+невосстановимое повреждение данных.
+
+`#synchronous_commit = on`	(off, local, remote_write, remote_apply или on) когда эта настройка включена, PostgreSQL будет дожидаться подтверждения коммита от дисковой системы, прежде чем сообщать клиентскому приложению об успешном завершении транзакции.
+
+`#wal_sync_method = fsync`	определяет метод синхронизации записи WAL на диск. Доступные методы: open_datasync, fdatasync (по-умолчанию в Linux и FreeBSD), fsync, fsync_writethrough, open_sync.
+
+`#full_page_writes = on`	когда эта настройка включена, PostgreSQL будет сохранять полностью изменившиеся страницы данных в журнале, а не только измененные блоки, чтобы обеспечить согласованность данных при восстановлении после сбоя.
+
+`#wal_log_hints = off`	определяет, будут ли записываться подсказки для ускорения восстановления из журнала (WAL log hints).
+
+`#wal_compression = off`	сжатие журнальных файлов.
+
+`#wal_init_zero = on`	инициализация WAL-файлов нулевыми байтами.
+
+`#wal_recycle = on`	перезапись старых WAL-файлов. 
+
+`#wal_buffers = -1`	(минимум 32 kb) определяет количество буферов в памяти, выделенных для хранения записей WAL. Значение -1 означает автоматическое определение этого значения PostgreSQL в зависимости от общего объема доступной памяти.
+
+`#wal_writer_delay = 200ms`	(1-10000 ms) время задержки между итерациями фонового процесса записи WAL.
+
+`#wal_writer_flush_after = 1MB`	определяет размер внутреннего буфера записи WAL, после которого фоновый процесс записи проводит синхронизацию с диском.
+
+`#wal_skip_threshold = 2MB`	определяет пороговое значение для перехода в состояние "skip writing" вместо записи WAL-файлов на диск.
+
+`#commit_delay = 0`	(0-100000) задержка между коммитами в микросекундах.
+
+`#commit_siblings = 5`	(1-1000) определяет максимальное количество транзакций, которые могут иметь одинаковый родительский ID до того, как PostgreSQL выполнит дополнительные проверки при коммите.
 
 # - Checkpoints -
 
