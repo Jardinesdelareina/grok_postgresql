@@ -269,7 +269,7 @@ host    all             all             127.0.0.1/32             gss     include
 
 Настройки WRITE-AHEAD LOG отвечают за параметры журнала записи (Write-Ahead Log, WAL). Журнал записи используется для обеспечения целостности данных и восстановления после сбоев системы.
 
-##### - Settings -
+##### - Настройки -
 
 `#wal_level = replica`	(minimal, replica, или logical) устанавливает минимальный уровень записи в журнале, необходимый для репликации. В данном случае, запись в журнал осуществляется на уровне, достаточном для репликации на другие серверы.
 
@@ -302,60 +302,63 @@ host    all             all             127.0.0.1/32             gss     include
 
 `#commit_siblings = 5`	(1-1000) определяет максимальное количество транзакций, которые могут иметь одинаковый родительский ID до того, как PostgreSQL выполнит дополнительные проверки при коммите.
 
-# - Checkpoints -
 
-#checkpoint_timeout = 5min		# range 30s-1d
-#checkpoint_completion_target = 0.9	# checkpoint target duration, 0.0 - 1.0
-#checkpoint_flush_after = 256kB		# measured in pages, 0 disables
-#checkpoint_warning = 30s		# 0 disables
-max_wal_size = 1GB
-min_wal_size = 80MB
+##### - Checkpoints -
 
-# - Archiving -
+`#checkpoint_timeout = 5min`	(30s-1d) определяет время (в минутах) между автоматическими проверками точек сохранения (checkpoints). При достижении этого времени система выполнит checkpoint.
 
-#archive_mode = off		# enables archiving; off, on, or always
-				# (change requires restart)
-#archive_command = ''		# command to use to archive a logfile segment
-				# placeholders: %p = path of file to archive
-				#               %f = file name only
-				# e.g. 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
-#archive_timeout = 0		# force a logfile segment switch after this
-				# number of seconds; 0 disables
+`#checkpoint_completion_target = 0.9`	(0.0 - 1.0) определяет часть буферов, которые должны быть скопированы на диск до завершения работы checkpoint. Значение 0.9 означает, что система должна скопировать на диск 90% буферов до завершения checkpoint.
 
-# - Archive Recovery -
+`#checkpoint_flush_after = 256kB`	определяет количество записей, которые должны быть накоплены в буфере перед их записью на диск во время checkpoint.
 
-# These are only used in recovery mode.
+`#checkpoint_warning = 30s`	(0 отключает) определяет время (в секундах), после которого система выдаст предупреждение о длительности checkpoint, если он продолжается дольше этого времени.
 
-#restore_command = ''		# command to use to restore an archived logfile segment
-				# placeholders: %p = path of file to restore
-				#               %f = file name only
-				# e.g. 'cp /mnt/server/archivedir/%f %p'
-#archive_cleanup_command = ''	# command to execute at every restartpoint
-#recovery_end_command = ''	# command to execute at completion of recovery
+`max_wal_size = 1GB`	определяют максимальный и минимальный размер WAL-файла (Write-Ahead Log), используемого для обеспечения целостности данных и восстановления после сбоев.
 
-# - Recovery Target -
+`min_wal_size = 80MB`
 
-# Set these only when performing a targeted recovery.
 
-#recovery_target = ''		# 'immediate' to end recovery as soon as a
-                                # consistent state is reached
-				# (change requires restart)
-#recovery_target_name = ''	# the named restore point to which recovery will proceed
-				# (change requires restart)
-#recovery_target_time = ''	# the time stamp up to which recovery will proceed
-				# (change requires restart)
-#recovery_target_xid = ''	# the transaction ID up to which recovery will proceed
-				# (change requires restart)
-#recovery_target_lsn = ''	# the WAL LSN up to which recovery will proceed
-				# (change requires restart)
-#recovery_target_inclusive = on # Specifies whether to stop:
-				# just after the specified recovery target (on)
-				# just before the recovery target (off)
-				# (change requires restart)
-#recovery_target_timeline = 'latest'	# 'current', 'latest', or timeline ID
-				# (change requires restart)
-#recovery_target_action = 'pause'	# 'pause', 'promote', 'shutdown'
-				# (change requires restart)
+##### - Архивирование -
+
+Архивирование WAL-файлов полезно для обеспечения надежности данных. При обычной работе PostgreSQL записывает изменения в WAL-файлы, а затем переносит их на диск. Архивирование WAL-файлов позволяет сохранить копию этих файлов в удаленном хранилище, что обеспечивает возможность восстановления данных в случае сбоя или потери данных на основном сервере.
+
+`#archive_mode = off`	(off, on, или always) определяет, включено ли архивирование WAL или нет.
+
+`#archive_command = ''`	определяет, какие файлы WAL будут архивироваться. Обычно используется для копирования WAL в удаленное хранилище. Если #archive_mode установлен на "off", эта настройка игнорируется.
+				
+`#archive_timeout = 0`	задает интервал времени (в секундах), через который производится проверка на наличие готовых к архивированию WAL-файлов. Если установлено значение "0", то проверка не выполняется.
+
+
+##### - Восстановление архива -
+
+Эти настройки относятся к режиму восстановления базы данных, когда используется архивирование журнала транзакций для восстановления до определенной временной точки или для восстановления на другой сервер. В обычных условиях эксплуатации эти настройки не требуются и должны быть закомментированы или иметь пустое значение.
+
+`#restore_command = ''`	позволяет указать команду, которая будет использоваться для восстановления архивных файлов журнала транзакций в режиме восстановления. 
+
+`#archive_cleanup_command = ''`	определяет команду, которая будет выполнять очистку устаревших архивных файлов журнала транзакций. Эта команда используется в режимах архивации и восстановления, когда PostgreSQL нуждается в удалении устаревших файлов, чтобы освободить дисковое пространство.
+
+`#recovery_end_command = ''`	указывает команду, которая будет запущена при завершении процесса восстановления базы данных. Это позволяет выполнять некоторые дополнительные действия, связанные с завершением процесса восстановления.
+
+
+##### - Цель восстановления-
+
+Настройки, связанные с восстановлением базы данных (recovery), определяют условия и процедуры для восстановления базы данных после сбоя.
+
+`#recovery_target = ''`	определяет цель восстановления. Может быть установлено на пустую строку (по умолчанию), чтобы не устанавливать цель, или может содержать значение времени, идентификатора транзакции (xid) или логического смещения журнала (lsn), указывающее на конкретную точку во времени, которую нужно восстановить.
+
+`#recovery_target_name = ''`	имя для указанной цели восстановления. Используется для идентификации целей в журнале восстановления.
+
+`#recovery_target_time = ''`	время, к которому нужно восстановить базу данных. Указывается в формате 'YYYY-MM-DD HH:MI:SS' (например, '2021-01-01 12:00:00').
+
+`#recovery_target_xid = ''`	идентификатор транзакции (xid), к которому нужно восстановить базу данных.
+
+`#recovery_target_lsn = ''`	логическое смещение журнала (lsn), к которому нужно восстановить базу данных.
+
+`#recovery_target_inclusive = on`	указывает, следует ли остановить восстановление сразу после указанной цели восстановления (on) или непосредственно перед целью восстановления (false).
+
+`#recovery_target_timeline = 'latest'`	('current', 'latest', или timeline ID) определяет временную линию восстановления, которую нужно использовать. Использование значения 'latest' означает, что нужно использовать последнюю доступную временную линию.
+
+`#recovery_target_action = 'pause'`	определяет действие после достижения цели восстановления. Может быть 'pause' (остановить), 'promote' (повысить) или 'shutdown' (выключить).
 
 
 #------------------------------------------------------------------------------
