@@ -384,7 +384,7 @@ host    all             all             127.0.0.1/32             gss     include
 `#vacuum_defer_cleanup_age = 0`	определяет количество транзакций, после которых очистка устаревших данных может быть отложена. Значение 0 указывает на то, что очистку следует выполнять сразу после транзакции.
 
 
-# - Резервные серверы (Standby Servers) -
+##### - Резервные серверы (Standby Servers) -
 
 `#primary_conninfo = ''`	определяет параметры соединения для потока репликации, который используется для передачи WAL-журналов между мастером и репликой.
 
@@ -418,76 +418,116 @@ host    all             all             127.0.0.1/32             gss     include
 `#max_sync_workers_per_subscription = 2`	определяет максимальное количество рабочих процессов, которые могут одновременно удерживать соединение с исходной базой данных для выполнения синхронной логической репликации.
 
 
-#------------------------------------------------------------------------------
-# QUERY TUNING
-#------------------------------------------------------------------------------
+------------------------
+### ОПТИМИЗАЦИЯ ЗАПРОСОВ
+------------------------
 
-# - Planner Method Configuration -
+##### - Конфигурация метода планировщика (Planner Method Configuration) -
 
-#enable_async_append = on
-#enable_bitmapscan = on
-#enable_gathermerge = on
-#enable_hashagg = on
-#enable_hashjoin = on
-#enable_incremental_sort = on
-#enable_indexscan = on
-#enable_indexonlyscan = on
-#enable_material = on
-#enable_memoize = on
-#enable_mergejoin = on
-#enable_nestloop = on
-#enable_parallel_append = on
-#enable_parallel_hash = on
-#enable_partition_pruning = on
-#enable_partitionwise_join = off
-#enable_partitionwise_aggregate = off
-#enable_seqscan = on
-#enable_sort = on
-#enable_tidscan = on
+`#enable_async_append = on`	включает или отключает асинхронное выполнение append-операций на диске.
 
-# - Planner Cost Constants -
+`#enable_bitmapscan = on`	включает или отключает использование операции Bitmap Scan, которая используется для более эффективного сканирования индексов.
 
-#seq_page_cost = 1.0			# measured on an arbitrary scale
-#random_page_cost = 4.0			# same scale as above
-#cpu_tuple_cost = 0.01			# same scale as above
-#cpu_index_tuple_cost = 0.005		# same scale as above
-#cpu_operator_cost = 0.0025		# same scale as above
-#parallel_setup_cost = 1000.0	# same scale as above
-#parallel_tuple_cost = 0.1		# same scale as above
-#min_parallel_table_scan_size = 8MB
-#min_parallel_index_scan_size = 512kB
-#effective_cache_size = 4GB
+`#enable_gathermerge = on`	включает или отключает использование операции Gather Merge для объединения результатов параллельного выполнения.
 
-#jit_above_cost = 100000		# perform JIT compilation if available
-					# and query more expensive than this;
-					# -1 disables
-#jit_inline_above_cost = 500000		# inline small functions if query is
-					# more expensive than this; -1 disables
-#jit_optimize_above_cost = 500000	# use expensive JIT optimizations if
-					# query is more expensive than this;
-					# -1 disables
+`#enable_hashagg = on`	включает или отключает использование операции Hash Aggregation, которая используется для агрегации данных на основе хэш-таблиц.
 
-# - Genetic Query Optimizer -
+`#enable_hashjoin = on`	включает или отключает использование операции Hash Join, которая используется для эффективного объединения данных на основе хэш-таблиц. 
 
-#geqo = on
-#geqo_threshold = 12
-#geqo_effort = 5			# range 1-10
-#geqo_pool_size = 0			# selects default based on effort
-#geqo_generations = 0			# selects default based on effort
-#geqo_selection_bias = 2.0		# range 1.5-2.0
-#geqo_seed = 0.0			# range 0.0-1.0
+`#enable_incremental_sort = on`	ключает или отключает использование инкрементальной сортировки, которая может улучшить производительность при сортировке больших объемов данных. 
 
-# - Other Planner Options -
+`#enable_indexscan = on`	включает или отключает использование сканирования индексов. 
 
-#default_statistics_target = 100	# range 1-10000
-#constraint_exclusion = partition	# on, off, or partition
-#cursor_tuple_fraction = 0.1		# range 0.0-1.0
-#from_collapse_limit = 8
-#jit = on				# allow JIT compilation
-#join_collapse_limit = 8		# 1 disables collapsing of explicit
-					# JOIN clauses
-#plan_cache_mode = auto			# auto, force_generic_plan or
-					# force_custom_plan
+`#enable_indexonlyscan = on`	включает или отключает использование операции Index Only Scan, которая может использовать только индексы для выполнения запроса без доступа к таблице. 
+
+`#enable_memoize = on`	включает или отключает использование мемоизации. Мемоизация - это техника, которая заключается в сохранении результатов выполнения функции при одинаковых входных параметрах. Это позволяет избежать повторных вычислений и улучшить производительность системы.
+
+`#enable_material = on`	включает или отключает использование операции Materialize, которая создает временные таблицы для хранения результатов промежуточных операций. 
+
+`#enable_mergejoin = on`	включает или отключает использование операции Merge Join, которая используется для объединения отсортированных данных из разных источников. 
+
+`#enable_nestloop = on`	включает или отключает использование операции Nested Loop Join, которая используется для объединения данных из разных источников. 
+
+`#enable_parallel_append = on`	включает асинхронное выполнение операции Append, которая объединяет результаты множества запросов. 
+
+`#enable_parallel_hash = on`	включает асинхронное выполнение операции Hash для распределенного хэширования. 
+
+`#enable_partition_pruning = on`	включает или отключает оптимизацию запросов на основе информации о разделах таблицы. 
+
+`#enable_partitionwise_join = off`	включает или отключает выполнение партиционного объединения данных из разных разделов таблицы. 
+
+`#enable_partitionwise_aggregate = off`	включает или отключает выполнение партиционной агрегации данных из разных разделов таблицы.
+
+`#enable_seqscan = on`	включает или отключает использование последовательного сканирования таблицы для выполнения запросов.
+
+`#enable_sort = on`	включает или отключает использование операции Sort, которая выполняет сортировку данных.
+
+`#enable_tidscan = on`	включает или отключает использование операции TID Scan, которая позволяет выполнить поиск по физическим адресам строк в таблице. По умолчанию включено.
+
+
+##### - Константы планировщика (Planner Cost Constants) -
+
+`#seq_page_cost = 1.0`	определяет стоимость последовательного чтения страницы таблицы.
+
+`#random_page_cost = 4.0`	определяет стоимость случайного чтения страницы таблицы.
+
+`#cpu_tuple_cost = 0.01`	определяет стоимость обработки кортежа.
+
+`#cpu_index_tuple_cost = 0.005`	определяет стоимость обработки индексного кортежа.
+
+`#cpu_operator_cost = 0.0025`	определяет стоимость выполнения оператора.
+
+`#parallel_setup_cost = 1000.0`	определяет стоимость настройки параллельного выполнения операции.
+
+`#parallel_tuple_cost = 0.1`	определяет стоимость обработки кортежа в параллельном выполнении.
+
+`#min_parallel_table_scan_size = 8MB`	минимальный размер таблицы, для которой будет использовано параллельное сканирование.
+
+`#min_parallel_index_scan_size = 512kB`	минимальный размер индекса, для которого будет использовано параллельное сканирование.
+
+`#effective_cache_size = 4GB`	приблизительное значение размера кэша, используемого для хранения данных.
+
+`#jit_above_cost = 100000`	задает пороговое значение стоимости выполнения запроса, выше которого задействуется Just-In-Time (JIT) компиляция.
+
+`#jit_inline_above_cost = 500000`	задает пороговое значение стоимости выполнения оператора, выше которого операторы могут быть встроены в генерируемый код JIT компилятором.
+
+`#jit_optimize_above_cost = 500000`	задает пороговое значение стоимости выполнения оператора, выше которого операторы будут оптимизированы JIT компилятором.
+
+
+##### - Оптимизатор генетических запросов (Genetic Query Optimizer) -
+
+GEQO работает как альтернативный метод оптимизации запросов и может оказывать влияние на производительность. 
+
+`#geqo = on`	включает использование GEQO.
+
+`#geqo_threshold = 12`	адает пороговое значение, при котором GEQO будет применяться. Если количество таблиц в запросе превышает это значение, GEQO будет использоваться для оптимизации плана запроса.
+
+`#geqo_effort = 5`	(1-10) устанавливает уровень усилий, затрачиваемых на генетическую оптимизацию.
+
+`#geqo_pool_size = 0`	определяет размер пула планов, генерируемых GEQO. Значение 0 означает автоматическое определение в зависимости от размерности запроса.
+
+`#geqo_generations = 0`	определяет количество генераций в генетическом алгоритме. Значение 0 означает автоматическое определение.
+
+`#geqo_selection_bias = 2.0`	(1.5-2.0) определяет степень предпочтения выбора лучших планов в генетическом алгоритме.
+
+`#geqo_seed = 0.0`	(0.0-1.0) устанавливает начальное значение для генератора случайных чисел в GEQO. Значение 0.0 использует системное время в качестве зерна.
+
+
+##### - Другие настройки планировщика (Other Planner Options) -
+
+`#default_statistics_target = 100`	(1-10000) определяет количество "статистических целей" по-умолчанию, используемых при анализе запроса и выборе плана выполнения. Большее значение может привести к более точным статистическим данным, но также может увеличить время анализа запроса.
+
+`#constraint_exclusion = partition`	(on, off, или partition) определяет, какие ограничения (constraints) будут использоваться при планировании запросов: включение ограничений средствами разделения (partition) или отключение ограничений на уровне планировщика. Значение `partition` указывает на использование разделенных ограничений, `on` - на использование всех ограничений включая разделенные, а `off` - на отключение ограничений при планировании.
+
+`#cursor_tuple_fraction = 0.1` (0.0-1.0) определяет долю числа строк, которые будут скопированы из результата запроса в курсор. Значение 0.1 указывает на то, что будет скопирована 10% строк результата.
+
+`#from_collapse_limit = 8`	определяет максимальное количество вложенных уровней FROM в запросе, которые могут быть объединены при оптимизации запроса.
+
+`#jit = on`	определяет использование Just-In-Time (JIT) компиляции для выполнения запросов. Значение `on` включает JIT-компиляцию, а значение `off` отключает ее.
+
+`#join_collapse_limit = 8`	определяет максимальное количество табличных выражений (JOIN) в запросе, которые могут быть скомбинированы в одно JOIN при оптимизации.
+
+`#plan_cache_mode = auto`	(auto, force_generic_plan или force_custom_plan) Определяет режим работы планового кэша. Значение `auto` позволяет PostgreSQL самостоятельно выбирать наилучший режим работы, основываясь на текущей нагрузке и характеристиках системы.
 
 
 #------------------------------------------------------------------------------
@@ -655,61 +695,71 @@ log_timezone = 'Europe/Moscow'
 `#update_process_title = on`	если эта настройка установлена в "on", PostgreSQL будет обновлять заголовок процесса с текущей выполняемой командой. Это может быть полезно при отладке или наблюдении за работой PostgreSQL.
 
 Если эта настройка установлена в "on", PostgreSQL будет обновлять заголовок процесса с текущей выполняемой командой. Это может быть полезно при отладке или наблюдении за работой PostgreSQL.
-#------------------------------------------------------------------------------
-# STATISTICS
-#------------------------------------------------------------------------------
-
-# - Query and Index Statistics Collector -
-
-#track_activities = on
-#track_activity_query_size = 1024	# (change requires restart)
-#track_counts = on
-#track_io_timing = off
-#track_wal_io_timing = off
-#track_functions = none			# none, pl, all
-stats_temp_directory = '/var/run/postgresql/14-main.pg_stat_tmp'
 
 
-# - Monitoring -
+--------------
+### СТАТИСТИКА
+--------------
 
-#compute_query_id = auto
-#log_statement_stats = off
-#log_parser_stats = off
-#log_planner_stats = off
-#log_executor_stats = off
+##### - Сборщик статистики запросов и индексов -
+
+`#track_activities = on`	включает отслеживание активности пользователей и сеансов подключения к базе данных.
+
+`#track_activity_query_size = 1024`	задает максимальный размер сохраняемого SQL-запроса для отслеживания активности.
+
+`#track_counts = on`	включает отслеживание количества строк, вставленных, обновленных и удаленных в каждой таблице.
+
+`#track_io_timing = off`	включает отслеживание времени операций ввода-вывода.Включает отслеживание времени операций ввода-вывода.
+
+`#track_wal_io_timing = off`	включает отслеживание времени операций ввода-вывода журналов транзакций (WAL).
+
+`#track_functions = none`	задает уровень отслеживания вызовов пользовательских функций (none - без отслеживания, pl - только для функций, all - для всех функций).
+
+`stats_temp_directory = '/var/run/postgresql/14-main.pg_stat_tmp'`	задает временную директорию для хранения временных файлов статистики.
 
 
-#------------------------------------------------------------------------------
-# AUTOVACUUM
-#------------------------------------------------------------------------------
+##### - Мониторинг -
 
-#autovacuum = on			# Enable autovacuum subprocess?  'on'
-					# requires track_counts to also be on.
-#autovacuum_max_workers = 3		# max number of autovacuum subprocesses
-					# (change requires restart)
-#autovacuum_naptime = 1min		# time between autovacuum runs
-#autovacuum_vacuum_threshold = 50	# min number of row updates before
-					# vacuum
-#autovacuum_vacuum_insert_threshold = 1000	# min number of row inserts
-					# before vacuum; -1 disables insert
-					# vacuums
-#autovacuum_analyze_threshold = 50	# min number of row updates before
-					# analyze
-#autovacuum_vacuum_scale_factor = 0.2	# fraction of table size before vacuum
-#autovacuum_vacuum_insert_scale_factor = 0.2	# fraction of inserts over table
-					# size before insert vacuum
-#autovacuum_analyze_scale_factor = 0.1	# fraction of table size before analyze
-#autovacuum_freeze_max_age = 200000000	# maximum XID age before forced vacuum
-					# (change requires restart)
-#autovacuum_multixact_freeze_max_age = 400000000	# maximum multixact age
-					# before forced vacuum
-					# (change requires restart)
-#autovacuum_vacuum_cost_delay = 2ms	# default vacuum cost delay for
-					# autovacuum, in milliseconds;
-					# -1 means use vacuum_cost_delay
-#autovacuum_vacuum_cost_limit = -1	# default vacuum cost limit for
-					# autovacuum, -1 means use
-					# vacuum_cost_limit
+`#compute_query_id = auto`	определяет, будет ли вычисляться идентификатор запроса для каждого SQL-запроса. Значение "auto" включает вычисление идентификатора запроса в зависимости от других настроек. 
+
+`#log_statement_stats = off`	указывает, должна ли быть включена запись статистики выполнения для каждого SQL-запроса в журнал.
+
+`#log_parser_stats = off`	определяет, должна ли быть включена запись статистики парсинга SQL-запросов в журнал.
+
+`#log_planner_stats = off`	указывает, должна ли быть включена запись статистики планировщика выполнения SQL-запросов в журнал.
+
+`#log_executor_stats = off`	определяет, должна ли быть включена запись статистики выполнения SQL-запросов в журнал.
+
+
+--------------
+### AUTOVACUUM
+--------------
+
+`#autovacuum = on`	указывает, будет ли включена автоматическая очистка (автовакуум) для базы данных.
+
+`#autovacuum_max_workers = 3`	максимальное количество процессов автовакуума, которые могут выполняться одновременно.
+
+`#autovacuum_naptime = 1min`	время ожидания между проверками таблиц для автовакуума.
+
+`#autovacuum_vacuum_threshold = 50`	минимальное число модифицированных или удаленных строк перед выполнением очистки (VACUUM).
+
+`#autovacuum_vacuum_insert_threshold = 1000`	минимальное число вставленных строк перед выполнением очистки (VACUUM).
+
+`#autovacuum_analyze_threshold = 50`	минимальное число модифицированных или удаленных строк перед выполнением анализа.
+
+`#autovacuum_vacuum_scale_factor = 0.2`	процент модифицированных или удаленных строк для выполнения очистки относительно общего числа строк в таблице.
+
+`#autovacuum_vacuum_insert_scale_factor = 0.2`	процент вставленных строк для выполнения очистки относительно общего числа строк в таблице.
+
+`#autovacuum_analyze_scale_factor = 0.1`	процент модифицированных или удаленных строк для выполнения анализа относительно общего числа строк в таблице.
+
+`#autovacuum_freeze_max_age = 200000000`	максимальный возраст транзакции (в количестве транзакций), после которого строки становятся "замороженными" и требуют очистки мертвых кортежей.
+
+`#autovacuum_multixact_freeze_max_age = 400000000`	максимальный возраст множественной транзакции (в количестве транзакций), после которого множественные кортежи становятся "замороженными" и требуют очистки.
+
+`#autovacuum_vacuum_cost_delay = 2ms`	задержка (временной промежуток) между итерациями VACUUM для контроля стоимости.
+
+`#autovacuum_vacuum_cost_limit = -1`	максимальная общая стоимость VACUUM, за которую он может выполняться одновременно с другими операциями.
 
 
 #------------------------------------------------------------------------------
