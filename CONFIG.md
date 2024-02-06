@@ -530,160 +530,117 @@ GEQO работает как альтернативный метод оптим�
 `#plan_cache_mode = auto`	(auto, force_generic_plan или force_custom_plan) Определяет режим работы планового кэша. Значение `auto` позволяет PostgreSQL самостоятельно выбирать наилучший режим работы, основываясь на текущей нагрузке и характеристиках системы.
 
 
-#------------------------------------------------------------------------------
-# REPORTING AND LOGGING
-#------------------------------------------------------------------------------
+----------------------------
+### ОТЧЕТНОСТЬ И ЛОГИРОВАНИЕ
+----------------------------
 
-# - Where to Log -
+##### - Где логи (Where to Log) -
 
-#log_destination = 'stderr'		# Valid values are combinations of
-					# stderr, csvlog, syslog, and eventlog,
-					# depending on platform.  csvlog
-					# requires logging_collector to be on.
+`#log_destination = 'stderr'`	определяет, куда будут направляться журнальные сообщения. В данном случае, они будут направляться в stderr (стандартный вывод ошибок).
 
-# This is used when logging to stderr:
-#logging_collector = off		# Enable capturing of stderr and csvlog
-					# into log files. Required to be on for
-					# csvlogs.
-					# (change requires restart)
+`#logging_collector = off`	определяет, будет ли использоваться специальный процесс-сборщик журнала для записи сообщений в файлы вместо отправки их в stderr.
 
-# These are only used if logging_collector is on:
-#log_directory = 'log'			# directory where log files are written,
-					# can be absolute or relative to PGDATA
-#log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'	# log file name pattern,
-					# can include strftime() escapes
-#log_file_mode = 0600			# creation mode for log files,
-					# begin with 0 to use octal notation
-#log_rotation_age = 1d			# Automatic rotation of logfiles will
-					# happen after that time.  0 disables.
-#log_rotation_size = 10MB		# Automatic rotation of logfiles will
-					# happen after that much log output.
-					# 0 disables.
-#log_truncate_on_rotation = off		# If on, an existing log file with the
-					# same name as the new log file will be
-					# truncated rather than appended to.
-					# But such truncation only occurs on
-					# time-driven rotation, not on restarts
-					# or size-driven rotation.  Default is
-					# off, meaning append to existing files
-					# in all cases.
+`#log_directory = 'log'`	задает каталог, в котором будут сохраняться журнальные файлы.
 
-# These are relevant when logging to syslog:
-#syslog_facility = 'LOCAL0'
-#syslog_ident = 'postgres'
-#syslog_sequence_numbers = on
-#syslog_split_messages = on
+`#log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'`	определяет формат имени файла журнала, включая возможность использования шаблонов даты и времени (%Y-%m-%d_%H%M%S).
 
-# This is only relevant when logging to eventlog (Windows):
-# (change requires restart)
-#event_source = 'PostgreSQL'
+`#log_file_mode = 0600`	указывает права доступа (mode) для создаваемых журнальных файлов.
 
-# - When to Log -
+`#log_rotation_age = 1d`	определяет, через какое время происходит поворот (ротация) журнальных файлов по времени.
 
-#log_min_messages = warning		# values in order of decreasing detail:
-					#   debug5
-					#   debug4
-					#   debug3
-					#   debug2
-					#   debug1
-					#   info
-					#   notice
-					#   warning
-					#   error
-					#   log
-					#   fatal
-					#   panic
+`#log_rotation_size = 10MB`	позволяет ограничить размер журнальных файлов, после достижения которого будет выполняться поворот.
 
-#log_min_error_statement = error	# values in order of decreasing detail:
-					#   debug5
-					#   debug4
-					#   debug3
-					#   debug2
-					#   debug1
-					#   info
-					#   notice
-					#   warning
-					#   error
-					#   log
-					#   fatal
-					#   panic (effectively off)
+`#log_truncate_on_rotation = off`	определяет, будет ли обрезать (truncate) текущий журнальный файл при его повороте.
 
-#log_min_duration_statement = -1	# -1 is disabled, 0 logs all statements
-					# and their durations, > 0 logs only
-					# statements running at least this number
-					# of milliseconds
+`#syslog_facility = 'LOCAL0'`	указывает, к какой категории syslog будут привязаны журнальные сообщения.
 
-#log_min_duration_sample = -1		# -1 is disabled, 0 logs a sample of statements
-					# and their durations, > 0 logs only a sample of
-					# statements running at least this number
-					# of milliseconds;
-					# sample fraction is determined by log_statement_sample_rate
+`#syslog_ident = 'postgres'`	указывает идентификатор, который будет добавлен к журнальным сообщениям для их идентификации в системе syslog.
 
-#log_statement_sample_rate = 1.0	# fraction of logged statements exceeding
-					# log_min_duration_sample to be logged;
-					# 1.0 logs all such statements, 0.0 never logs
+`#syslog_sequence_numbers = on`	определяет, будут ли добавляться последовательные номера к журнальным сообщениям.
+
+`#syslog_split_messages = on`	указывает, будут ли длинные сообщения разбиваться на несколько строк в системе syslog.
+
+`#event_source = 'PostgreSQL'`	определяет источник журнальных сообщений в системе, как правило, название программы или службы (в данном случае PostgreSQL).
 
 
-#log_transaction_sample_rate = 0.0	# fraction of transactions whose statements
-					# are logged regardless of their duration; 1.0 logs all
-					# statements from all transactions, 0.0 never logs
+##### - Когда логи (When to Log) -
 
-# - What to Log -
+`#log_min_messages = warning`	устанавливает минимальный уровень журналирования для сообщений. В данном случае, установлен уровень "warning", что означает, что будут журналироваться только предупреждающие сообщения и сообщения более высокого уровня. Значения в порядке убывания детализации: <em>debug5, debug4, debug3, debug2, debug1, info, notice, warning, error, log, fatal, panic</em>.
 
-#debug_print_parse = off
-#debug_print_rewritten = off
-#debug_print_plan = off
-#debug_pretty_print = on
-#log_autovacuum_min_duration = -1	# log autovacuum activity;
-					# -1 disables, 0 logs all actions and
-					# their durations, > 0 logs only
-					# actions running at least this number
-					# of milliseconds.
-#log_checkpoints = off
-#log_connections = off
-#log_disconnections = off
-#log_duration = off
-#log_error_verbosity = default		# terse, default, or verbose messages
-#log_hostname = off
-log_line_prefix = '%m [%p] %q%u@%d '		# special values:
-					#   %a = application name
-					#   %u = user name
-					#   %d = database name
-					#   %r = remote host and port
-					#   %h = remote host
-					#   %b = backend type
-					#   %p = process ID
-					#   %P = process ID of parallel group leader
-					#   %t = timestamp without milliseconds
-					#   %m = timestamp with milliseconds
-					#   %n = timestamp with milliseconds (as a Unix epoch)
-					#   %Q = query ID (0 if none or not computed)
-					#   %i = command tag
-					#   %e = SQL state
-					#   %c = session ID
-					#   %l = session line number
-					#   %s = session start timestamp
-					#   %v = virtual transaction ID
-					#   %x = transaction ID (0 if none)
-					#   %q = stop here in non-session
-					#        processes
-					#   %% = '%'
-					# e.g. '<%u%%%d> '
-#log_lock_waits = off			# log lock waits >= deadlock_timeout
-#log_recovery_conflict_waits = off	# log standby recovery conflict waits
-					# >= deadlock_timeout
-#log_parameter_max_length = -1		# when logging statements, limit logged
-					# bind-parameter values to N bytes;
-					# -1 means print in full, 0 disables
-#log_parameter_max_length_on_error = 0	# when logging an error, limit logged
-					# bind-parameter values to N bytes;
-					# -1 means print in full, 0 disables
-#log_statement = 'none'			# none, ddl, mod, all
-#log_replication_commands = off
-#log_temp_files = -1			# log temporary files equal or larger
-					# than the specified size in kilobytes;
-					# -1 disables, 0 logs all temp files
-log_timezone = 'Europe/Moscow'
+`#log_min_error_statement = error`	устанавливает минимальный уровень журналирования для ошибок в SQL-запросах. В данном случае, установлен уровень "error", что означает, что будут журналироваться только ошибки в SQL-запросах. Значения в порядке убывания детализации: <em>debug5, debug4, debug3, debug2, debug1, info, notice, warning, error, log, fatal, panic</em>.
+
+`#log_min_duration_statement = -1`	устанавливает минимальную продолжительность выполнения SQL-запросов, при которой они будут журналироваться. Значение -1 означает, что все SQL-запросы будут журналироваться.
+
+`#log_min_duration_sample = -1`	 устанавливает минимальную продолжительность выполнения SQL-запросов, при которой они будут выборочно журналироваться. Значение -1 означает, что выборочное журналирование не используется.
+
+`#log_statement_sample_rate = 1.0`	устанавливает частоту выборочного журналирования SQL-запросов, когда `log_min_duration_sample` включен. Значение 1.0 означает, что все соответствующие SQL-запросы будут журналироваться.
+
+`#log_transaction_sample_rate = 0.0`	устанавливает частоту выборочного журналирования транзакций. Значение 0.0 означает, что выборочное журналирование транзакций не используется.
+
+
+##### - Что в логах (What to Log) -
+
+`#debug_print_parse = off`	определяет, будет ли выводиться отладочная информация при парсинге SQL-запросов.
+
+`#debug_print_rewritten = off`	определяет, будет ли выводиться отладочная информация при переписывании SQL-запросов.
+
+`#debug_print_plan = off`	определяет, будет ли выводиться отладочная информация о плане выполнения SQL-запросов.
+
+`#debug_pretty_print = on`	определяет, будет ли форматироваться красивый вывод отладочной информации.
+
+`#log_autovacuum_min_duration = -1`	определяет минимальную продолжительность автоочистки, при которой будет производиться запись логов.
+
+`#log_checkpoints = off`	определяет, будут ли записываться логи о контрольных точках.
+
+`#log_connections = off`	определяет, будут ли записываться логи о подключениях к базе данных.
+
+`#log_disconnections = off`	определяет, будут ли записываться логи о отключениях от базы данных.
+
+`#log_duration = off`	определяет, будут ли записываться логи о продолжительности выполнения SQL-запросов.
+
+`#log_error_verbosity = default`	(terse, default, или verbose messages) определяет уровень детализации логов об ошибках.
+
+`#log_hostname = off`	определяет, будет ли записываться имя хоста в логи.
+
+`log_line_prefix = '%m [%p] %q%u@%d '`	определяет формат строки префикса для каждой записи в лог-файле. Специальные символы:
+* %a = application name
+* %u = user name
+* %d = database name
+* %r = remote host and port
+* %h = remote host
+* %b = backend type
+* %p = process ID
+* %P = process ID of parallel group leader
+* %t = timestamp without milliseconds
+* %m = timestamp with milliseconds
+* %n = timestamp with milliseconds (as a Unix epoch)
+* %Q = query ID (0 if none or not computed)
+* %i = command tag
+* %e = SQL state
+* %c = session ID
+* %l = session line number
+* %s = session start timestamp
+* %v = virtual transaction ID
+* %x = transaction ID (0 if none)
+* %q = stop here in non-session processes
+* %% = '%'
+* e.g. '<%u%%%d> '
+
+`#log_lock_waits = off`	определяет, будут ли записываться логи о блокировках процессов.
+
+`#log_recovery_conflict_waits = off`	определяет, будут ли записываться логи о конфликтах при восстановлении базы данных.
+
+`#log_parameter_max_length = -1`	определяет максимальную длину вывода значений параметров в логах.
+
+`#log_parameter_max_length_on_error = 0`	определяет максимальную длину вывода значений параметров при ошибке. 
+
+`#log_statement = 'none'`	(none, ddl, mod, all) определяет типы SQL-запросов, для которых будет производиться запись логов.
+
+`#log_replication_commands = off`	определяет, будут ли записываться логи о командах репликации.
+
+`#log_temp_files = -1`	определяет минимальный размер временных файлов для записи логов.
+
+`log_timezone = 'Europe/Moscow'`	определяет временную зону для записи времени в логах.
 
 
 -------------------------------------
