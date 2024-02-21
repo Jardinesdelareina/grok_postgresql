@@ -16,7 +16,7 @@ CREATE SCHEMA kafe_v1;
 --
 CREATE TABLE kafe_v1.addresses
 (
-    address_id SERIAL PRIMARY KEY,
+    address_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     address_street CHARACTER VARYING(128) NOT NULL,
     address_house SMALLINT NOT NULL,
     address_apartment SMALLINT,
@@ -30,7 +30,7 @@ CREATE TABLE kafe_v1.addresses
 --
 CREATE TABLE kafe_v1.customers
 (
-    customer_id INTEGER PRIMARY KEY,
+    customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     customer_name CHARACTER VARYING(128),
     customer_phone CHARACTER VARYING(10) UNIQUE NOT NULL,
     customer_discount BOOLEAN DEFAULT FALSE
@@ -43,7 +43,7 @@ CREATE TABLE kafe_v1.customers
 --
 CREATE TABLE kafe_v1.addresses_customers
 (
-    addresses_customers_id SERIAL PRIMARY KEY,
+    addresses_customers_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     fk_customer_id INTEGER REFERENCES kafe_v1.customers(customer_id),
     fk_address_id INTEGER REFERENCES kafe_v1.addresses(address_id)
 );
@@ -54,7 +54,7 @@ CREATE TABLE kafe_v1.addresses_customers
 --
 CREATE TABLE kafe_v1.orders
 (
-    order_id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_number CHARACTER VARYING(16) NOT NULL,
     order_status CHARACTER VARYING(10) CHECK (order_status IN ('ACCEPTED', 
                                                                 'CLOSED', 
@@ -69,7 +69,7 @@ CREATE TABLE kafe_v1.orders
 --
 CREATE TABLE kafe_v1.categories
 (
-    category_id SMALLINT PRIMARY KEY,
+    category_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     category_title CHARACTER VARYING(32) NOT NULL
 );
 
@@ -79,7 +79,7 @@ CREATE TABLE kafe_v1.categories
 --
 CREATE TABLE kafe_v1.dishes
 (
-    dish_id SMALLINT PRIMARY KEY,
+    dish_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     dish_title CHARACTER VARYING(128) UNIQUE NOT NULL,
     dish_description TEXT,
     dish_price NUMERIC(10, 2) NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE kafe_v1.dishes
 --
 CREATE TABLE kafe_v1.orders_dishes
 (
-    orders_dishes_id BIGSERIAL PRIMARY KEY,
+    orders_dishes_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     orders_dishes_amount DOUBLE PRECISION DEFAULT 1,
     fk_order_id INTEGER REFERENCES kafe_v1.orders(order_id),
     fk_dish_id INTEGER REFERENCES kafe_v1.dishes(dish_id)
