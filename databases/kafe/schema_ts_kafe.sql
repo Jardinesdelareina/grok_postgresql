@@ -1,9 +1,11 @@
 /*
-    Предварительная очистка схемы со всем содержимым, 
-    создание новой схемы базы данных
+    Предварительная очистка схемы со всем содержимым, удаление табличного пространства, 
+    создание нового табличного пространства и новой схемы базы данных
 */
 
 DROP SCHEMA IF EXISTS kafe_v1 CASCADE;
+DROP TABLESPACE IF EXISTS ts_kafe;
+CREATE TABLESPACE ts_kafe LOCATION '/etc/postgresql/14/main';
 CREATE SCHEMA kafe_v1;
 
 
@@ -22,7 +24,7 @@ CREATE TABLE kafe_v1.addresses
     address_apartment SMALLINT,
     address_entrance SMALLINT,
     address_floor SMALLINT
-);
+) TABLESPACE ts_kafe;
 
 
 --
@@ -34,7 +36,10 @@ CREATE TABLE kafe_v1.customers
     customer_name CHARACTER VARYING(128),
     customer_phone CHARACTER VARYING(10) UNIQUE NOT NULL,
     customer_discount BOOLEAN DEFAULT FALSE
-);
+) TABLESPACE ts_kafe;
+
+CREATE INDEX idx_phone_customers 
+ON kafe_v1.customers (customer_phone) TABLESPACE ts_kafe;
 
 
 --
@@ -46,7 +51,10 @@ CREATE TABLE kafe_v1.addresses_customers
     addresses_customers_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     fk_customer_id INTEGER REFERENCES kafe_v1.customers(customer_id),
     fk_address_id INTEGER REFERENCES kafe_v1.addresses(address_id)
-);
+) TABLESPACE ts_kafe;
+
+CREATE INDEX idx_address_customers 
+ON kafe_v1.addresses (address_street, address_house) TABLESPACE ts_kafe;
 
 
 --
@@ -61,7 +69,7 @@ CREATE TABLE kafe_v1.orders
                                                                 'CANCELED')) NOT NULL,
     order_created TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     order_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+) TABLESPACE ts_kafe;
 
 
 --
@@ -71,7 +79,7 @@ CREATE TABLE kafe_v1.categories
 (
     category_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     category_title CHARACTER VARYING(32) NOT NULL
-);
+) TABLESPACE ts_kafe;
 
 
 --
@@ -84,7 +92,10 @@ CREATE TABLE kafe_v1.dishes
     dish_description TEXT,
     dish_price NUMERIC(10, 2) NOT NULL,
     fk_category_id INTEGER REFERENCES kafe_v1.categories(category_id)
-);
+) TABLESPACE ts_kafe;
+
+CREATE INDEX idx_dish 
+ON kafe_v1.dishes (dish_title) TABLESPACE ts_kafe;
 
 
 --
@@ -97,13 +108,4 @@ CREATE TABLE kafe_v1.orders_dishes
     orders_dishes_amount DOUBLE PRECISION DEFAULT 1,
     fk_order_id INTEGER REFERENCES kafe_v1.orders(order_id),
     fk_dish_id INTEGER REFERENCES kafe_v1.dishes(dish_id)
-);
-
-
-/*
-    Индексы
-*/
-
-CREATE INDEX idx_address_customers ON kafe_v1.addresses (address_street, address_house);
-CREATE INDEX idx_phone_customers ON kafe_v1.customers (customer_phone);
-CREATE INDEX idx_dish ON kafe_v1.dishes (dish_title);
+) TABLESPACE ts_kafe;
