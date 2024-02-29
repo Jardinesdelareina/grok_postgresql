@@ -1,73 +1,63 @@
---
--- Drop tables;
---
-DROP TABLE order_items;
-DROP TABLE orders;
-DROP TABLE users;
-DROP TABLE carts;
-DROP TABLE products;
-DROP TABLE categories;
-
+DROP SCHEMA IF EXISTS anstore_v1 CASCADE;
+CREATE SCHEMA anstore_v1;
 
 --
--- Name: categories; 
--- Type: TABLE;
+-- Категории товаров
 --
-CREATE TABLE categories
+CREATE TABLE anstore_v1.categories
 (
-    category_id SMALLSERIAL PRIMARY KEY,
+    category_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     category_title VARCHAR(24) UNIQUE NOT NULL
 );
 
 
 --
--- Name: products; 
--- Type: TABLE;
+-- Товар
 --
-CREATE TABLE products
+CREATE TABLE anstore_v1.products
 (
-    product_id SERIAL PRIMARY KEY,
+    product_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     product_title VARCHAR(100) NOT NULL,
     product_image VARCHAR(200) NOT NULL,
     product_description TEXT,
     product_price DOUBLE PRECISION NOT NULL,
     product_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    fk_category_id SMALLINT REFERENCES categories(category_id)
+    fk_category_id SMALLINT REFERENCES anstore_v1.categories(category_id)
+);
+
+CREATE INDEX idx_products_title ON anstore_v1.products (product_title);
+
+
+--
+-- Корзина покупок
+--
+CREATE TABLE anstore_v1.carts
+(
+    cart_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fk_product_id INTEGER REFERENCES anstore_v1.products(product_id)
 );
 
 
+-- 
+-- Покупатель
 --
--- Name: carts; 
--- Type: TABLE;
---
-CREATE TABLE carts
+CREATE TABLE anstore_v1.users
 (
-    cart_id SERIAL PRIMARY KEY,
-    fk_product_id INTEGER REFERENCES products(product_id)
-);
-
-
--- Name: users; 
--- Type: TABLE;
---
-CREATE TABLE users
-(
-    user_id SERIAL PRIMARY KEY,
+    user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
-    fk_cart_id INTEGER REFERENCES carts(cart_id),
+    fk_cart_id INTEGER REFERENCES anstore_v1.carts(cart_id),
 
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
 
 --
--- Name: orders; 
--- Type: TABLE;
+-- Заказ
 --
-CREATE TABLE orders
+CREATE TABLE anstore_v1.orders
 (
-    order_id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     order_number BIGINT UNIQUE NOT NULL,
     order_status VARCHAR(11) CHECK (order_status IN ('SUCCESS', 'TIMEOUT', 
                                                     'CREATED_PAY', 'FINISHED', 
@@ -79,14 +69,16 @@ CREATE TABLE orders
     signer_phone VARCHAR(14) NOT NULL
 );
 
+CREATE INDEX idx_orders_status ON anstore_v1.orders (order_status);
+CREATE INDEX idx_orders_time ON anstore_v1.orders (order_time);
+
 
 --
--- Name: order_items; 
--- Type: TABLE;
+-- Детали заказа
 --
-CREATE TABLE order_items
+CREATE TABLE anstore_v1.order_items
 (
-    fk_order_id BIGINT REFERENCES orders(order_id),
-    fk_product_id INTEGER REFERENCES products(product_id),
+    fk_order_id BIGINT REFERENCES anstore_v1.orders(order_id),
+    fk_product_id INTEGER REFERENCES anstore_v1.products(product_id),
     amount INTEGER NOT NULL
 );
