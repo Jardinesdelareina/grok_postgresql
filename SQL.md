@@ -242,6 +242,7 @@ WHERE customer_id = ANY(SELECT customer_id
                         WHERE quantity > 40)
 ```
 
+
 ### DDL (Data Difinition Language)
 
 `CREATE TABLE table_name`   создать таблицу
@@ -289,7 +290,6 @@ CREATE TABLE new_table
 );
 ```
 
-
 ##### UPDATE
 Изменить в таблице table_name в колонке column_name атрибут с id 5:
 ```sql
@@ -304,6 +304,7 @@ WHERE id = 5;
 DELETE FROM table_name
 WHERE rating < 50;
 ``` 
+
 
 ### Представление (VIEW)
 
@@ -360,6 +361,7 @@ SELECT product_name, unit_price, unit_in_stock
 FROM products;
 ```
 
+
 ### COALESCE
 
 Вывести order_id, order_date и обработанную колонку ship_region таки образом, что будут отображены значения не NULL, а значения NULL будут заменены строкой 'нет данных';
@@ -367,6 +369,7 @@ FROM products;
 SELECT order_id, order_date, COALESCE(ship_region, 'нет данных') AS ship_region
 FROM orders;
 ```
+
 
 ### Функции
 
@@ -394,6 +397,15 @@ CREATE OR REPLACE FUNCTION get_product_price_by_name(p_price VARCHAR) RETURNS DO
 	FROM products
 	WHERE product_name = prod_name
 $$ LANGUAGE SQL;
+```
+
+Функция без имени аргумента
+```sql
+CREATE OR REPLACE FUNCTION get_hello(TEXT) RETURNS TEXT AS $$
+    SELECT 'Hello' || $1 || '!';     -- номер вместо имени
+$$ LANGUAGE SQL;
+
+SELECT get_hello('world');
 ```
 
 
