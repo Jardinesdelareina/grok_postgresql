@@ -28,6 +28,38 @@ $$ LANGUAGE plpgsql;
 SELECT calc_sum(5, 3);  -- Вызов функции
 ```
 
+Анонимная функция:
+```sql
+DO $$
+DECLARE
+    var_1 TEXT;
+    var_2 TEXT := 'World';
+BEGIN
+    var_1 := 'Hello';
+    RAICE NOTICE '%, %!', var_1, var_2;     -- Вывод сообщения в терминал psql с меткой NOTICE
+END 
+$$;
+```
+
+Вложенные блоки:
+```sql
+DO $$
+<<outer_block>>
+DECLARE
+    strng TEXT := 'Hello';
+BEGIN
+    <<inner_block>>
+    DECLARE
+        strng TEXT := 'World';
+    BEGIN
+        RAICE NOTICE '%, %!', outer_block.strng, inner_block.strng;
+        RAICE NOTICE 'Внутренняя переменная strng: %!', strng;
+    END inner_block;
+END outer_block;
+$$
+```
+
+
 ### SETOF
 
 Ключевое слово <b>SETOF</b> в функциях SQL указывает, что функция возвращает набор значений, то есть результатом функции будет таблица или набор строк. В примере функция вернет набор значений типа users (что является таблицей, или, иначе говоря в данной ситуации - пользовательским типом данных):
@@ -65,6 +97,29 @@ CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC)
     END;
 $$ LANGUAGE plpgsql;
 ```
+
+
+### CASE / WHEN
+
+```sql
+DO $$
+DECLARE
+    code TEXT := (fmt(89317478592)).code;
+BEGIN
+    CASE code
+        WHEN '495', '499' THEN
+            RAICE NOTICE '% - Москва', code;
+        WHEN '812' THEN
+            RAICE NOTICE '% - Санкт-Петербург', code;
+        WHEN '384' THEN
+            RAICE NOTICE '% - Кемеровская область', code;
+        ELSE
+            RAICE NOTICE '% - Прочие', code;
+    END CASE;
+END;
+$$;
+```
+
 
 ### Циклы
 
