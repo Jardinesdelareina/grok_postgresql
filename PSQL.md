@@ -27,10 +27,6 @@
 
 `sudo tail -n 10 /var/log/postgresql/postgresql-14-main.log`    вывод 10 последних записей из журнала сообщений сервера
 
-`CREATE USER your_username WITH PASSWORD 'your_password';`      создание пользователя и пароля
-
-`GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
-
 `\q`    выход из <b>psql</b>
 
 
@@ -84,6 +80,47 @@
 `\db`   список табличных пространств
 
 `\i <path_to_file_sql>`    открытие файла (используется для запуска скриптов .sql)
+
+
+### Роли и атрибуты
+
+`CREATE ROLE <роль> [WITH] <атрибут> [атрибут ...]`
+
+<em>LOGIN</em>   возможность подключения
+<em>SUPERUSER</em>   суперпользователь
+<em>CREATEDB</em>    возможность создавать базы данных
+<em>CREATEROLE</em>  возможность создавать роли
+<em>REPLICATION</em>     использование протокола репликации
+и др.
+
+Создаем базу данных
+`CREATE DATABASE access_roles`
+
+Подключение к базе данных
+`\c access_roles`
+
+Создаем роль для пользователя alice (появляется возможность подключаться и создавать новые роли)
+```sql
+CREATE ROLE alice LOGIN CREATEROLE;
+```
+
+Подключение к базе данных под именем alice
+\с - alice
+
+Создание новой роли от alice
+```sql
+CREATE ROLE bob LOGIN;
+```
+
+`CREATE USER your_username WITH PASSWORD 'your_password';`      создание пользователя и пароля
+
+`GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
+
+`ALTER ROLE your_username NOLOGIN;`     лишение пользователя возможности подключения в базе данных
+
+`GRANT alice TO postgres`   включение alice в роль postgres
+
+`REVOKE alice TO postgres`  исключение alice из роли postgres
 
 
 ### Очистка дискового пространства
