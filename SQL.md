@@ -573,7 +573,8 @@ CREATE TABLESPACE data_space LOCATION '/mnt/data';
 
 Например, чтобы создать таблицу в пользовательском табличном пространстве 'data_space':
 ```sql
-CREATE TABLE my_table (
+CREATE TABLE my_table 
+(
     id SERIAL PRIMARY KEY,
     name VARCHAR(50)
 ) TABLESPACE data_space;
@@ -658,3 +659,30 @@ EXECUTE my_prepared_query(100, 50);
 ```
 
 Таким образом, "$1", "$2" и т.д. обозначают параметры и предполагают использование подстановки значений при выполнении запроса.
+
+
+### Составные типы
+
+Составные типы в SQL позволяют создавать пользовательские типы данных, которые могут быть представлены как структурные типы, содержащие несколько атрибутов или полей. Такие типы могут быть используемы в качестве аргументов функций, переменных и полях таблиц.
+
+Использование составных типов делает код более читаемым и понятным, позволяя логически группировать данные.
+
+```sql
+CREATE TYPE address AS (
+    street VARCHAR(50),
+    city VARCHAR(50),
+    zip_code VARCHAR(10)
+);
+
+CREATE TABLE employees
+(
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50),
+    home_address address
+);
+
+INSERT INTO employees(name, home_address) 
+VALUES('John Doe', ROW('123 Main St', 'Anytown', '12345'));
+```
+
+В этом примере `address` - это составной тип, содержащий три поля `street`, `city` и `zip_code`. Затем этот тип используется как атрибут структуры в таблице `employees`.
