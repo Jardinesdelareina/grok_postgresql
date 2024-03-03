@@ -81,6 +81,8 @@
 
 `\db`   список табличных пространств
 
+`\dp <username>.<table>`    список привелегий для таблицы у пользователя
+
 `\i <path_to_file_sql>`    открытие файла (используется для запуска скриптов .sql)
 
 
@@ -118,11 +120,23 @@ CREATE ROLE bob LOGIN;
 
 `GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
 
+`GRANT CREATE, USAGE ON SCHEMA alice TO bob`    предоставление привелегий пользователю bob на создание и использование схем
+
 `ALTER ROLE your_username NOLOGIN;`     лишение пользователя возможности подключения в базе данных
 
 `GRANT alice TO postgres`   включение alice в роль postgres
 
 `REVOKE alice TO postgres`  исключение alice из роли postgres
+
+##### Access priveleges
+
+* a - INSERT
+* r - SELECT
+* w - UPDATE
+* d - DELETE
+* D - TRUNCATE
+* x - REFERENCE
+* t - TRIGGER
 
 
 ### Очистка дискового пространства
