@@ -25,6 +25,8 @@
 
 `sudo -u postgres psql`     подключение к серверу, активация оболочки <b>psql</b>
 
+`psql -h localhost -U user_name db_name`     подключение по локальной сети к базе данных под определенным пользователем
+
 `sudo tail -n 10 /var/log/postgresql/postgresql-14-main.log`    вывод 10 последних записей из журнала сообщений сервера
 
 `\q`    выход из <b>psql</b>
@@ -86,7 +88,7 @@
 `\i <path_to_file_sql>`    открытие файла (используется для запуска скриптов .sql)
 
 
-### Роли и атрибуты
+### Роли и привелегии
 
 `CREATE ROLE <роль> [WITH] <атрибут> [атрибут ...]`
 
@@ -109,14 +111,21 @@ CREATE ROLE alice LOGIN CREATEROLE;
 ```
 
 Подключение к базе данных под именем alice
+
 \с - alice
+
+или
+
+`psql -h localhost -U alice acces_roles`
 
 Создание новой роли от alice
 ```sql
 CREATE ROLE bob LOGIN;
 ```
 
-`CREATE USER your_username WITH PASSWORD 'your_password';`      создание пользователя и пароля
+##### Примеры использования управления привелегиями
+
+`CREATE ROLE new_user WITH LOGIN PASSWORD 'new_password' VALID UNTIL '2022-12-31';`      создание пользователя и пароля и установление срока учетной записи
 
 `GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
 
@@ -127,6 +136,7 @@ CREATE ROLE bob LOGIN;
 `GRANT alice TO postgres`   включение alice в роль postgres
 
 `REVOKE alice TO postgres`  исключение alice из роли postgres
+
 
 ##### Access priveleges
 
