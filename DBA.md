@@ -160,6 +160,8 @@ CREATE ROLE bob LOGIN;
 
 ### Резервное копирование
 
+Все команды выполняются от имени postgres.
+
 ##### Логическая копия
 
 * <b>COPY</b> - копирует данные между файлом и таблицей. COPY перемещает данные между таблицами PostgreSQL и обычными файлами в файловой системе. COPY TO копирует содержимое таблицы в файл, а COPY FROM — из файла в таблицу (добавляет данные к тем, что уже содержались в таблице). 
@@ -190,6 +192,8 @@ COPY t FROM STDIN;
 
 <em>Автономная резервная копия</em>:
 
+'sudo mkdir /var/lib/postgresql/14/replica'     создание директории для копии базы данных
+
 Проверка, что включен параметр `replica` и сколько может быть включено процессов одновременно
 ```sql
 SELECT name, setting 
@@ -204,9 +208,23 @@ FROM pg_hba_file_rules()
 WHERE 'replication' = ANY(database);
 ```
 
-`sudo -u postgres pg_lsclusters`    проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
+`pg_lsclusters`    проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
 
+`sudo rm -rf /home/user/basebackup_catalog/*`  очистка каталога для резервной копии
 
+Предоставить пользователю роль REPLICATION
+```sql
+ALTER ROLE user_name REPLICATION;
+```
+
+`pg_basebackup --pgdata=/home/user/test_db/backup`    создание резервной копии кластера
+
+`sudo rm -rf /var/lib/postgresql/14/replica/*`     очистка каталога кластера
+
+`sudo mv /home/user/test_db/backup/* /var/lib/postgresql/14/replica
+`   перемещение созданной копии в каталог кластера
+
+`sudo chown -R postgres:postgres /var/lib/postgresql/14/replica`     назначение postgres владельцем файлов каталога кластера
 
 -------------------------------------------------------------------------------------------------------
 
