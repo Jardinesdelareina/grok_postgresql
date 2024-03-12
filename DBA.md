@@ -11,6 +11,8 @@
 
 `sudo apt install postgresql`   установка
 
+`sudo ls -l /usr/lib/postgresql/14/bin`     каталог установки PostgreSQL
+
 `sudo service postgresql status`    проверка, запущен ли сервис
 
 `sudo service postgresql start`     запуск сервера если он не запущен
@@ -158,6 +160,24 @@ CREATE ROLE bob LOGIN;
 В целом, <b>VACUUM</b> обычно достаточно для поддержания эффективности работы базы данных, однако, при необходимости выполнить более глубокую очистку и компактацию таблицы, может использоваться <b>VACUUM FULL</b>.
 
 
+### Подсчет контрольных сумм
+
+Проверка, включено ведение контрольных сумм (по-умолчанию отключено):
+```sql
+SHOW pg_checksums;
+```
+
+`sudo service postgresql stop`
+
+или
+
+`sudo systemctl stop postgresql@14-main`    отключение сервера
+
+`su - postgres -c '/usr/lib/postgresql/12/bin/pg_checksums --enable -D "/var/lib/postgresql/12/main"'`  включение ведения контрольных сумм на сервере
+
+`sudo systemctl start postgresql@14-main`
+
+
 ### Резервное копирование
 
 Все команды выполняются от имени postgres.
@@ -192,9 +212,7 @@ COPY t FROM STDIN;
 
 <em>Автономная резервная копия</em>:
 
-'sudo mkdir /var/lib/postgresql/14/replica'     создание директории для копии базы данных
-
-Проверка, что включен параметр `replica` и сколько может быть включено процессов одновременно
+Проверка, что включен параметр `replica` и сколько может быть включено процессов одновременно/var/lib/postgresql/14/
 ```sql
 SELECT name, setting 
 FROM pg_settings 
@@ -208,21 +226,24 @@ FROM pg_hba_file_rules()
 WHERE 'replication' = ANY(database);
 ```
 
-`pg_lsclusters`    проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
+`sudo rm -rf /home/fueros/Desktop/grok_postgresql/databases/test_db/backup/*`  очистка каталога для резервной копии
 
-`sudo rm -rf /home/user/basebackup_catalog/*`  очистка каталога для резервной копии
+`pg_basebackup --pgdata=/home/fueros/Desktop/grok_postgresql/databases/test_db/backup -R`    создание резервной копии кластера (-R сформирует необходимые для репликации конфигурационные параметры)
+
+`pg_lsclusters`    проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
 
 Предоставить пользователю роль REPLICATION
 ```sql
 ALTER ROLE user_name REPLICATION;
 ```
 
-`pg_basebackup --pgdata=/home/user/test_db/backup`    создание резервной копии кластера
+'sudo mkdir /var/lib/postgresql/14/replica'     создание директории для копии базы данных
+
+или
 
 `sudo rm -rf /var/lib/postgresql/14/replica/*`     очистка каталога кластера
 
-`sudo mv /home/user/test_db/backup/* /var/lib/postgresql/14/replica
-`   перемещение созданной копии в каталог кластера
+`sudo mv /home/fueros/Desktop/grok_postgresql/databases/test_db/backup/* /var/lib/postgresql/14/replica`   перемещение созданной копии в каталог кластера
 
 `sudo chown -R postgres:postgres /var/lib/postgresql/14/replica`     назначение postgres владельцем файлов каталога кластера
 
