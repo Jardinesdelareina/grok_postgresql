@@ -23,3 +23,19 @@ with count_fl as
 select model 
 from count_fl 
 where cnt = (select max(cnt) from count_fl);
+
+
+-- Модель, перевозящая больше всего пассажиров
+with count_passengers as 
+    (select model, count(passenger_id) as passengers
+    from (select *
+        from Aircrafts
+        join Flights on Aircrafts.aircraft_code = Flights.aircraft_code) as models_aircrafts
+    join (select *
+        from Ticket_flights
+        join Tickets on Ticket_flights.ticket_no = Tickets.ticket_no) as tickets
+    on models_aircrafts.flight_id = tickets.flight_id
+    group by model)
+select model
+from count_passengers
+where passengers = (select max(passengers) from count_passengers);
