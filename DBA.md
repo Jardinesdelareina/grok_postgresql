@@ -31,6 +31,8 @@
 
 `sudo tail -n 10 /var/log/postgresql/postgresql-14-main.log`    вывод 10 последних записей из журнала сообщений сервера
 
+`psql -U username -d dbname -c "SELECT * FROM table" > /path/to/file/output.txt`  запись результата запроса в файл
+
 `\q`    выход из <b>psql</b>
 
 
