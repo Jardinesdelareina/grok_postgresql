@@ -68,7 +68,8 @@ CREATE TABLE kafe_v1.orders
                                                                 'CLOSED', 
                                                                 'CANCELED')) NOT NULL,
     order_created TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    order_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    order_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    fk_customer_id INTEGER REFERENCES kafe_v1.customers(category_id) 
 ) TABLESPACE ts_kafe;
 
 
@@ -105,7 +106,7 @@ ON kafe_v1.dishes (dish_title) TABLESPACE ts_kafe;
 CREATE TABLE kafe_v1.orders_dishes
 (
     orders_dishes_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    orders_dishes_amount DOUBLE PRECISION DEFAULT 1,
+    orders_dishes_amount SMALLINT DEFAULT 1,
     fk_order_id INTEGER REFERENCES kafe_v1.orders(order_id),
     fk_dish_id INTEGER REFERENCES kafe_v1.dishes(dish_id)
 ) TABLESPACE ts_kafe;
