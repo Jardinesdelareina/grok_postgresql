@@ -4,8 +4,8 @@
 */
 
 DROP SCHEMA IF EXISTS kafe_v1 CASCADE;
-DROP TABLESPACE IF EXISTS ts_kafe;
-CREATE TABLESPACE ts_kafe LOCATION '/etc/postgresql/14/main';
+DROP TABLESPACE IF EXISTS main_kafe;
+CREATE TABLESPACE main_kafe LOCATION '/etc/postgresql/14/main';
 CREATE SCHEMA kafe_v1;
 
 
@@ -18,13 +18,13 @@ CREATE SCHEMA kafe_v1;
 --
 CREATE TABLE kafe_v1.addresses
 (
-    address_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    address_street CHARACTER VARYING(128) NOT NULL,
+    address_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    address_street VARCHAR(128) NOT NULL,
     address_house SMALLINT NOT NULL,
     address_apartment SMALLINT,
     address_entrance SMALLINT,
     address_floor SMALLINT
-) TABLESPACE ts_kafe;
+) TABLESPACE main_kafe;
 
 
 --
@@ -32,14 +32,14 @@ CREATE TABLE kafe_v1.addresses
 --
 CREATE TABLE kafe_v1.customers
 (
-    customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    customer_name CHARACTER VARYING(128),
-    customer_phone CHARACTER VARYING(10) UNIQUE NOT NULL,
+    customer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    customer_name VARCHAR(128),
+    customer_phone VARCHAR(10) UNIQUE NOT NULL,
     customer_discount BOOLEAN DEFAULT FALSE
-) TABLESPACE ts_kafe;
+) TABLESPACE main_kafe;
 
 CREATE INDEX idx_phone_customers 
-ON kafe_v1.customers (customer_phone) TABLESPACE ts_kafe;
+ON kafe_v1.customers (customer_phone) TABLESPACE main_kafe;
 
 
 --
@@ -48,13 +48,13 @@ ON kafe_v1.customers (customer_phone) TABLESPACE ts_kafe;
 --
 CREATE TABLE kafe_v1.addresses_customers
 (
-    addresses_customers_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    fk_customer_id INTEGER REFERENCES kafe_v1.customers(customer_id),
-    fk_address_id INTEGER REFERENCES kafe_v1.addresses(address_id)
-) TABLESPACE ts_kafe;
+    addresses_customers_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fk_customer_id INT REFERENCES kafe_v1.customers(customer_id),
+    fk_address_id INT REFERENCES kafe_v1.addresses(address_id)
+) TABLESPACE main_kafe;
 
 CREATE INDEX idx_address_customers 
-ON kafe_v1.addresses (address_street, address_house) TABLESPACE ts_kafe;
+ON kafe_v1.addresses (address_street, address_house) TABLESPACE main_kafe;
 
 
 --
@@ -63,14 +63,14 @@ ON kafe_v1.addresses (address_street, address_house) TABLESPACE ts_kafe;
 CREATE TABLE kafe_v1.orders
 (
     order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    order_number CHARACTER VARYING(16) NOT NULL,
-    order_status CHARACTER VARYING(10) CHECK (order_status IN ('ACCEPTED', 
+    order_number VARCHAR(16) NOT NULL,
+    order_status VARCHAR(10) CHECK (order_status IN ('ACCEPTED', 
                                                                 'CLOSED', 
                                                                 'CANCELED')) NOT NULL,
-    order_created TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    order_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    fk_customer_id INTEGER REFERENCES kafe_v1.customers(category_id) 
-) TABLESPACE ts_kafe;
+    order_created TIMESTAMPTZ DEFAULT NOW(),
+    order_updated TIMESTAMPTZ DEFAULT NOW(),
+    fk_customer_id INT REFERENCES kafe_v1.customers(category_id) 
+) TABLESPACE main_kafe;
 
 
 --
@@ -79,8 +79,8 @@ CREATE TABLE kafe_v1.orders
 CREATE TABLE kafe_v1.categories
 (
     category_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    category_title CHARACTER VARYING(32) NOT NULL
-) TABLESPACE ts_kafe;
+    category_title VARCHAR(32) NOT NULL
+) TABLESPACE main_kafe;
 
 
 --
@@ -89,14 +89,15 @@ CREATE TABLE kafe_v1.categories
 CREATE TABLE kafe_v1.dishes
 (
     dish_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    dish_title CHARACTER VARYING(128) UNIQUE NOT NULL,
+    dish_title VARCHAR(128) UNIQUE NOT NULL,
     dish_description TEXT,
-    dish_price NUMERIC(10, 2) NOT NULL,
-    fk_category_id INTEGER REFERENCES kafe_v1.categories(category_id)
-) TABLESPACE ts_kafe;
+    dish_price DECIMAL(10, 2) NOT NULL,
+    dish_is_available BOOLEAN DEFAULT TRUE,
+    fk_category_id INT REFERENCES kafe_v1.categories(category_id)
+) TABLESPACE main_kafe;
 
 CREATE INDEX idx_dish 
-ON kafe_v1.dishes (dish_title) TABLESPACE ts_kafe;
+ON kafe_v1.dishes (dish_title) TABLESPACE main_kafe;
 
 
 --
@@ -107,6 +108,6 @@ CREATE TABLE kafe_v1.orders_dishes
 (
     orders_dishes_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     orders_dishes_amount SMALLINT DEFAULT 1,
-    fk_order_id INTEGER REFERENCES kafe_v1.orders(order_id),
-    fk_dish_id INTEGER REFERENCES kafe_v1.dishes(dish_id)
-) TABLESPACE ts_kafe;
+    fk_order_id INT REFERENCES kafe_v1.orders(order_id),
+    fk_dish_id INT REFERENCES kafe_v1.dishes(dish_id)
+) TABLESPACE main_kafe;
