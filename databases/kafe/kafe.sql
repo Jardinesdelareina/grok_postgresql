@@ -13,12 +13,12 @@ CREATE SCHEMA kafe_v1;
 --
 CREATE TABLE kafe_v1.addresses
 (
-    address_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    address_street VARCHAR(128) NOT NULL,
-    address_house SMALLINT NOT NULL,
-    address_apartment SMALLINT,
-    address_entrance SMALLINT,
-    address_floor SMALLINT
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    street VARCHAR(128) NOT NULL,
+    house SMALLINT NOT NULL,
+    apartment SMALLINT,
+    entrance SMALLINT,
+    floor SMALLINT
 );
 
 
@@ -27,14 +27,14 @@ CREATE TABLE kafe_v1.addresses
 --
 CREATE TABLE kafe_v1.customers
 (
-    customer_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    customer_name VARCHAR(128),
-    customer_phone VARCHAR(10) UNIQUE NOT NULL,
-    customer_discount BOOLEAN DEFAULT FALSE
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(128),
+    phone VARCHAR(10) UNIQUE NOT NULL,
+    discount BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX idx_phone_customers 
-ON kafe_v1.customers (customer_phone);
+ON kafe_v1.customers (phone);
 
 
 --
@@ -44,12 +44,12 @@ ON kafe_v1.customers (customer_phone);
 CREATE TABLE kafe_v1.addresses_customers
 (
     addresses_customers_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    fk_customer_id INT REFERENCES kafe_v1.customers(customer_id),
-    fk_address_id INT REFERENCES kafe_v1.addresses(address_id)
+    fk_customer_id INT REFERENCES kafe_v1.customers(id),
+    fk_address_id INT REFERENCES kafe_v1.addresses(id)
 );
 
 CREATE INDEX idx_address_customers 
-ON kafe_v1.addresses (address_street, address_house);
+ON kafe_v1.addresses (street, house);
 
 
 --
@@ -57,14 +57,15 @@ ON kafe_v1.addresses (address_street, address_house);
 --
 CREATE TABLE kafe_v1.orders
 (
-    order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    order_number VARCHAR(16) NOT NULL,
-    order_status VARCHAR(10) CHECK (order_status IN ('ACCEPTED', 
-                                                    'CLOSED', 
-                                                    'CANCELED')) NOT NULL,
-    order_created TIMESTAMPTZ DEFAULT NOW(),
-    order_updated TIMESTAMPTZ DEFAULT NOW(),
-    fk_customer_id INT REFERENCES kafe_v1.customers(customer_id) 
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    number VARCHAR(16) NOT NULL,
+    status VARCHAR(10) CHECK (status IN ('ACCEPTED', 
+                                                'CLOSED', 
+                                                'CANCELED')) NOT NULL,
+    created TIMESTAMPTZ DEFAULT NOW(),
+    updated TIMESTAMPTZ DEFAULT NOW(),
+    is_available BOOLEAN DEFAULT TRUE,
+    fk_customer_id INT REFERENCES kafe_v1.customers(id)
 );
 
 
@@ -73,8 +74,8 @@ CREATE TABLE kafe_v1.orders
 --
 CREATE TABLE kafe_v1.categories
 (
-    category_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    category_title VARCHAR(32) NOT NULL
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(32) NOT NULL
 );
 
 
@@ -83,16 +84,16 @@ CREATE TABLE kafe_v1.categories
 --
 CREATE TABLE kafe_v1.dishes
 (
-    dish_id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    dish_title VARCHAR(128) UNIQUE NOT NULL,
-    dish_description TEXT,
-    dish_price DECIMAL(10, 2) NOT NULL,
-    dish_is_available BOOLEAN DEFAULT TRUE,
-    fk_category_id INT REFERENCES kafe_v1.categories(category_id)
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(128) UNIQUE NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    fk_category_id INT REFERENCES kafe_v1.categories(id)
 );
 
 CREATE INDEX idx_dish 
-ON kafe_v1.dishes (dish_title);
+ON kafe_v1.dishes (title);
 
 
 --
@@ -101,8 +102,8 @@ ON kafe_v1.dishes (dish_title);
 --
 CREATE TABLE kafe_v1.orders_dishes
 (
-    orders_dishes_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    orders_dishes_amount SMALLINT DEFAULT 1,
-    fk_order_id INT REFERENCES kafe_v1.orders(order_id),
-    fk_dish_id INT REFERENCES kafe_v1.dishes(dish_id)
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    amount SMALLINT DEFAULT 1,
+    fk_order_id INT REFERENCES kafe_v1.orders(id),
+    fk_dish_id INT REFERENCES kafe_v1.dishes(id)
 );
