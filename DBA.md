@@ -8,8 +8,9 @@
     <img src="https://github.com/devicons/devicon/blob/master/icons/postgresql/postgresql-original.svg" width="40" height="40"/>&nbsp;
 </div>
 
+`sudo apt-get --purge remove postgresql\*`  удаление PostgreSQL и всех его компонентов
 
-`sudo apt install postgresql`   установка
+`sudo apt install postgresql`   установка PostgreSQL
 
 `sudo ls -l /usr/lib/postgresql/14/bin`     каталог установки PostgreSQL
 
