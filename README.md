@@ -27,7 +27,7 @@
 
 Типы данных [описаны в документации](https://postgrespro.ru/docs/postgresql/14/datatype). 
 
-Некоторые типы данных PostgreSQl:
+Некоторые типы данных PostgreSQL:
 
 1. Числовые:
    - `INTEGER` (целочисленный тип)
