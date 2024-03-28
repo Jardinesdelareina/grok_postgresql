@@ -8,6 +8,7 @@ CREATE DATABASE kafe;
 DROP SCHEMA IF EXISTS kafe_v1 CASCADE;
 CREATE SCHEMA kafe_v1;
 
+
 --
 -- Адреса заказчиков
 --
@@ -29,7 +30,7 @@ CREATE TABLE kafe_v1.customers
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(128),
-    phone VARCHAR(10) UNIQUE NOT NULL,
+    phone VARCHAR(11) UNIQUE NOT NULL,
     discount BOOLEAN DEFAULT FALSE
 );
 
@@ -53,19 +54,62 @@ ON kafe_v1.addresses (street, house);
 
 
 --
--- Заказы
+-- Официанты
+--
+CREATE TABLE kafe_v1.waiters
+(
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+
+--
+--  Заказы
 --
 CREATE TABLE kafe_v1.orders
 (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     number VARCHAR(16) NOT NULL,
-    status VARCHAR(10) CHECK (status IN ('ACCEPTED', 
-                                                'CLOSED', 
-                                                'CANCELED')) NOT NULL,
+    status VARCHAR(10) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
     created TIMESTAMPTZ DEFAULT NOW(),
     updated TIMESTAMPTZ DEFAULT NOW(),
-    is_available BOOLEAN DEFAULT TRUE,
-    fk_customer_id INT REFERENCES kafe_v1.customers(id)
+    comment VARCHAR(50)
+);
+
+
+--
+-- Заказы (доставка)
+--
+CREATE TABLE kafe_v1.orders_delivery
+(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fk_customer_id INT REFERENCES kafe_v1.customers(id),
+    fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
+);
+
+
+--
+-- Заказы (зал)
+--
+CREATE TABLE kafe_v1.orders_hall
+(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    table_number SMALLINT,
+    fk_order_id BIGINT REFERENCES kafe_v1.orders(id),
+    fk_waiter_id SMALLINT REFERENCES kafe_v1.waiters(id),
+
+    CONSTRAINT table_number_range CHECK (table_number >= 1 AND table_number <= 32)
+);
+
+
+--
+-- Заказы (самовывоз)
+--
+CREATE TABLE kafe_v1.orders_take_out
+(
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    phone_number VARCHAR(11) UNIQUE NOT NULL,
+    fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
 );
 
 
