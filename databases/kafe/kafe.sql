@@ -72,7 +72,7 @@ CREATE TABLE kafe_v1.orders
     number VARCHAR(16) NOT NULL,
     status VARCHAR(10) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
     created TIMESTAMPTZ DEFAULT NOW(),
-    updated TIMESTAMPTZ DEFAULT NOW(),
+    updated TIMESTAMPTZ,
     comment VARCHAR(50)
 );
 
