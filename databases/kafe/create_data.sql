@@ -1,17 +1,7 @@
-DROP FUNCTION generate_order_number;
-DROP FUNCTION generate_phone_number;
-DROP FUNCTION generate_boolean_value;
-DROP FUNCTION generate_name;
-DROP FUNCTION generate_num;
-DROP VIEW male_name_list;
-DROP VIEW female_name_list;
-DROP PROCEDURE create_data;
-
-
 --
 -- Генерация номера заказа
 --
-CREATE OR REPLACE FUNCTION generate_order_number() RETURNS INT AS $$
+CREATE OR REPLACE FUNCTION kafe_v1.generate_order_number() RETURNS INT AS $$
     SELECT EXTRACT(milliseconds FROM now())::int + random() * 100::int;
 $$ LANGUAGE sql;
 
@@ -19,7 +9,7 @@ $$ LANGUAGE sql;
 --
 -- Генерация мобильных номеров
 --
-CREATE OR REPLACE FUNCTION generate_phone_number() RETURNS VARCHAR(11) AS $$
+CREATE OR REPLACE FUNCTION kafe_v1.generate_phone_number() RETURNS VARCHAR(11) AS $$
     SELECT '79' || lpad(floor(random() * 1000000000)::text, 9, '0');
 $$ LANGUAGE sql;
 
@@ -27,7 +17,7 @@ $$ LANGUAGE sql;
 --
 -- Генерация булевого значения
 --
-CREATE OR REPLACE FUNCTION generate_boolean_value() RETURNS BOOLEAN AS $$
+CREATE OR REPLACE FUNCTION kafe_v1.generate_boolean_value() RETURNS BOOLEAN AS $$
     SELECT CASE WHEN random() < 0.5 THEN TRUE ELSE FALSE END
 $$ LANGUAGE sql;
 
@@ -35,7 +25,7 @@ $$ LANGUAGE sql;
 --
 -- Мужские имена/фамилии
 --
-CREATE VIEW male_name_list AS
+CREATE VIEW kafe_v1.male_name_list AS
 SELECT (f_name || ' ' || l_name) AS male_name 
     FROM (SELECT unnest(array[
         'Андрей', 'Александр', 'Алексей', 'Артем', 'Борис', 'Вадим', 
@@ -61,7 +51,7 @@ SELECT (f_name || ' ' || l_name) AS male_name
 --
 -- Женские имена/фамилии
 --
-CREATE VIEW female_name_list AS
+CREATE VIEW kafe_v1.female_name_list AS
 SELECT (f_name || ' ' || l_name) AS female_name
     FROM (SELECT unnest(array[
         'Анна', 'Виктория', 'Екатерина', 'Мария', 'Ольга', 'Татьяна', 
@@ -87,7 +77,7 @@ SELECT (f_name || ' ' || l_name) AS female_name
 --
 -- Генерация произвольного числа (предел указывается в качестве параметра) 
 --
-CREATE OR REPLACE FUNCTION generate_num(limit_num INT) RETURNS INT AS $$
+CREATE OR REPLACE FUNCTION kafe_v1.generate_num(limit_num INT) RETURNS INT AS $$
     SELECT floor(random() * limit_num) + 1;
 $$ LANGUAGE sql;
 
@@ -95,50 +85,114 @@ $$ LANGUAGE sql;
 --
 -- Генерация значения имя/фамилия
 --
-CREATE OR REPLACE FUNCTION generate_name() RETURNS VARCHAR AS $$
+CREATE OR REPLACE FUNCTION kafe_v1.generate_name() RETURNS VARCHAR AS $$
     SELECT 
         CASE WHEN random() > 0.5 
-            THEN (SELECT male_name FROM male_name_list)
-            ELSE (SELECT female_name FROM female_name_list)
+            THEN (SELECT male_name FROM kafe_v1.male_name_list)
+            ELSE (SELECT female_name FROM kafe_v1.female_name_list)
             END
 $$ LANGUAGE sql;
 
 
 --
--- Создание заказа (имитация от просмотра меню до оформления ACCEPTED и оплаты CLOSED)
+-- Создание заказа доставки (имитация от просмотра меню до оформления ACCEPTED и оплаты CLOSED)
 --
-CREATE OR REPLACE PROCEDURE create_data(fid INT) AS $$
+CREATE OR REPLACE PROCEDURE kafe_v1.create_data_delivery(fid INT) AS $$
 
     INSERT INTO kafe_v1.customers(name, phone, discount)
-    VALUES(generate_name(), generate_phone_number(), generate_boolean_value());
+    VALUES(kafe_v1.generate_name(), kafe_v1.generate_phone_number(), kafe_v1.generate_boolean_value());
 
     SELECT title, description, price
     FROM kafe_v1.dishes;
 
-    INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
-    VALUES(generate_num(limit_num -> 5), fid, generate_num(limit_num-> 271));
-
     INSERT INTO kafe_v1.orders(number, status, created)
-    VALUES(order_number(), 'ACCEPTED', now());
+    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
 
-    /* CASE 
-        WHEN random() > 0.5 THEN 
-        INSERT INTO kafe_v1.orders_hall(table_number, fk_order_id, fk_waiter_id)
-        VALUES(generate_num(limit_num-> 32), fid, generate_num(limit_num -> 5))
-        
-        WHEN random() < 0.5 THEN
-        INSERT INTO kafe_v1.orders_delivery(fk_customer_id, fk_order_id)
-        VALUES(fid, fid )
+    INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(271));
 
-        WHEN random() = 0.5 THEN
-        INSERT INTO kafe_v1.orders_take_out(phone_number, fk_order_id)
-        VALUES(phone_numbr(), fid)
-    END */
+    INSERT INTO kafe_v1.orders_delivery(fk_customer_id, fk_order_id)
+    VALUES(fid, fid);
 
     SELECT pg_sleep(20); 
     
-    UPDATE kafe_1.orders
+    UPDATE kafe_v1.orders
     SET status = 'CLOSED', updated = now()
-    WHERE id = fid 
+    WHERE id = fid;
 
 $$ LANGUAGE sql;
+
+
+--
+-- Создание заказа самовывоза (имитация от просмотра меню до оформления ACCEPTED и оплаты CLOSED)
+--
+CREATE OR REPLACE PROCEDURE kafe_v1.create_data_take_out(fid INT) AS $$
+
+    SELECT title, description, price
+    FROM kafe_v1.dishes;
+
+    INSERT INTO kafe_v1.orders(number, status, created)
+    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
+
+    INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(271));
+
+    INSERT INTO kafe_v1.orders_take_out(phone_number, fk_order_id)
+    VALUES(kafe_v1.generate_phone_number(), fid);
+
+    SELECT pg_sleep(20); 
+    
+    UPDATE kafe_v1.orders
+    SET status = 'CLOSED', updated = now()
+    WHERE id = fid;
+
+$$ LANGUAGE sql;
+
+
+--
+-- Создание заказа зала (имитация от просмотра меню до оформления ACCEPTED и оплаты CLOSED)
+--
+CREATE OR REPLACE PROCEDURE kafe_v1.create_data_hall(fid INT) AS $$
+
+    SELECT title, description, price
+    FROM kafe_v1.dishes;
+
+    INSERT INTO kafe_v1.orders(number, status, created)
+    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
+
+    INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(271));
+
+    INSERT INTO kafe_v1.orders_hall(table_number, fk_order_id, fk_waiter_id)
+    VALUES(kafe_v1.generate_num(32), fid, kafe_v1.generate_num(5));
+
+    SELECT pg_sleep(20); 
+    
+    UPDATE kafe_v1.orders
+    SET status = 'CLOSED', updated = now()
+    WHERE id = fid;
+
+$$ LANGUAGE sql;
+
+
+--
+-- Генерация данных (основной поток)
+--
+CREATE OR REPLACE FUNCTION kafe_v1.send_loop() RETURNS VOID AS $$
+    DECLARE
+        fid INT;
+    BEGIN
+        WHILE TRUE LOOP
+            FOR fid IN 1..1600 LOOP
+                CASE
+                    WHEN random() > 0.5 THEN
+                        CALL kafe_v1.create_data_delivery(fid);
+                    WHEN random() < 0.5 THEN
+                        CALL kafe_v1.create_data_hall(fid);
+                    ELSE
+                        CALL kafe_v1.create_data_take_out(fid);
+                END CASE;
+            END LOOP;
+        END LOOP;
+    END;
+$$ LANGUAGE plpgsql;
