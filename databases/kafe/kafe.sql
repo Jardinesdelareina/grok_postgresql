@@ -34,9 +34,6 @@ CREATE TABLE kafe_v1.customers
     discount BOOLEAN DEFAULT FALSE
 );
 
-CREATE INDEX idx_phone_customers 
-ON kafe_v1.customers (phone);
-
 
 --
 -- Many to Many addresses и customers
@@ -48,9 +45,6 @@ CREATE TABLE kafe_v1.addresses_customers
     fk_customer_id INT REFERENCES kafe_v1.customers(id),
     fk_address_id INT REFERENCES kafe_v1.addresses(id)
 );
-
-CREATE INDEX idx_address_customers 
-ON kafe_v1.addresses (street, house);
 
 
 --
@@ -135,9 +129,6 @@ CREATE TABLE kafe_v1.dishes
     is_available BOOLEAN DEFAULT TRUE,
     fk_category_id INT REFERENCES kafe_v1.categories(id)
 );
-
-CREATE INDEX idx_dish 
-ON kafe_v1.dishes (title);
 
 
 --

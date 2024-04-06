@@ -33,8 +33,6 @@ CREATE TABLE anstore_v1.products
     fk_category_id SMALLINT REFERENCES anstore_v1.categories(id)
 );
 
-CREATE INDEX idx_products_title ON anstore_v1.products (title);
-
 
 -- 
 -- Покупатели
@@ -119,8 +117,6 @@ CREATE TABLE anstore_v1.orders
     time TIMESTAMPTZ DEFAULT NOW(),
     fk_delivery_point_id INTEGER REFERENCES anstore_v1.delivery_points(id)
 );
-
-CREATE INDEX idx_orders_time ON anstore_v1.orders (time);
 
 
 --

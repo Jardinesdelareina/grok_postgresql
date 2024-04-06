@@ -29,8 +29,6 @@ CREATE TABLE users
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
-CREATE INDEX idx_users ON users (username, email);
-
 
 --
 -- Name: categories; 
@@ -58,8 +56,6 @@ CREATE TABLE articles
     fk_category_id SMALLINT REFERENCES categories(category_id)
 );
 
-CREATE INDEX idx_articles ON articles (created_at);
-
 
 --
 -- Name: comments; 
@@ -74,5 +70,3 @@ CREATE TABLE comments
     fk_user_id INTEGER REFERENCES users(user_id),
     fk_article_id INTEGER REFERENCES articles(article_id)
 );
-
-CREATE INDEX idx_comments ON comments (created_at);

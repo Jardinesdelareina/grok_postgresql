@@ -30,9 +30,6 @@ CREATE TABLE angram_v1.users
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
-CREATE INDEX idx_user
-ON angram_v1.users (first_name, last_name);
-
 
 --
 -- Публикации

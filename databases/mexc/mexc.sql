@@ -15,9 +15,6 @@ CREATE TABLE spot
     m_close REAL NOT NULL
 ) PARTITION BY RANGE (m_time);
 
-CREATE INDEX idx_m_symbol ON spot (m_symbol);
-CREATE INDEX idx_m_time ON spot (m_time);
-
 
 CREATE TABLE spot_202404 PARTITION OF spot
 FOR VALUES FROM ('2024-04-01') TO ('2024-05-01');
