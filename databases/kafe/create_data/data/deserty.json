@@ -1,0 +1,51 @@
+[
+    {
+        "title": "Фруктовые роллы",
+        "description": "Сливочный сыр/банан/киви",
+        "price": "360",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Баноффи",
+        "description": "Компоте банановый/клубника/лимон",
+        "price": "330",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Авокадо",
+        "description": "Мусс/молочный шоколад/фруктовое пюре",
+        "price": "370",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Клубничный чизкейк",
+        "description": "Шоколадный бисквит/мусс/пюре клубники",
+        "price": "320",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Медовик",
+        "description": "Сметана/мед/облепиха",
+        "price": "280",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Чизкейк классический",
+        "description": "Сметана/сливочный сыр/черная смородина",
+        "price": "300",
+        "is_available": true,
+        "category": 1
+    },
+    {
+        "title": "Торт Наполеон",
+        "description": "Соленая карамель/сливки",
+        "price": "310",
+        "is_available": true,
+        "category": 1
+    }
+]

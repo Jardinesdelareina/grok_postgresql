@@ -1,0 +1,163 @@
+[
+    {
+        "title": "Ями Ями",
+        "description": "Копченый угорь, авокадо, сливочный сыр, японский омлет, соевая бумага, икра тобико, соус Унаги, Темпура, сухари панко\nПодается с имбирем и васаби (20/10 г)",
+        "price": "590",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл Юми",
+        "description": "Копченый лосось, сливочный сыр, авокадо, Темпура, сухари панко, икра тобико\nПодается с имбирем и васаби (20/10 г)",
+        "price": "450",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Фудзияма",
+        "description": "Лосось холодного копчения, сливочный сыр, японский омлет, огурец, Темпура, сухари панко ,соус Фудзи\nПодается с имбирем и васаби (20/10 г)",
+        "price": "590",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Окинава",
+        "description": "Морской гребешок, помидор, сливочный сыр, соус Спайси, икра тобико, кунжут.\nПодается с имбирем и васаби (20/10 г)",
+        "price": "670",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Острый ролл с копченым угрем",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "290",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Острый ролл с лососем",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "280",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Острый ролл с морским гребешком",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "270",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Острый ролл с тунцом",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "250",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл лосось с авокадо",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "250",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл овощной",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "170",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с авокадо",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "180",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с копченым лососем",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "350",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с лососем",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "280",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с огурцом",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "180",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с сыром и тигровой креветкой",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "270",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с тунцом",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "250",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Ролл с копченым угрем",
+        "description": "Подается с имбирем и васаби (20/10г)",
+        "price": "290",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши запеченные с копченым угрем",
+        "description": "Подается с имбирем и васаби (20/10)",
+        "price": "440",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши запеченные с тигровой креветкой",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "480",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши острые с лососем",
+        "description": "Подается с имбирем и васаби (20/10)",
+        "price": "550",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши с лососем и икрой",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "750",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши острые с угрем",
+        "description": "Подается с имбирем и васаби (20/10 г)",
+        "price": "580",
+        "is_available": true,
+        "category": 4
+    },
+    {
+        "title": "Оши татаки с копченым угрем",
+        "description": "Подается с имбирем и васаби (20/10 г )",
+        "price": "580",
+        "is_available": true,
+        "category": 4
+    }
+]
