@@ -53,20 +53,19 @@ CREATE TABLE kafe_v1.addresses_customers
 CREATE TABLE kafe_v1.waiters
 (
     id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50)
+    name VARCHAR(50) NOT NULL
 );
 
 
 --
---  Заказы
+-- Заказы
 --
 CREATE TABLE kafe_v1.orders
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    number VARCHAR(16) NOT NULL,
+    id BIGINT NOT NULL PRIMARY KEY,
     status VARCHAR(10) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
-    created TIMESTAMPTZ DEFAULT NOW(),
-    updated TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
     comment VARCHAR(50)
 );
 
@@ -80,6 +79,9 @@ CREATE TABLE kafe_v1.orders_delivery
     fk_customer_id INT REFERENCES kafe_v1.customers(id),
     fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
 );
+
+CREATE INDEX idx_customer_orders_delivery ON kafe_v1.orders_delivery(fk_customer_id);
+CREATE INDEX idx_order_orders_delivery ON kafe_v1.orders_delivery(fk_order_id);
 
 
 --
@@ -95,6 +97,8 @@ CREATE TABLE kafe_v1.orders_hall
     CONSTRAINT table_number_range CHECK (table_number >= 1 AND table_number <= 32)
 );
 
+CREATE INDEX idx_order_orders_hall ON kafe_v1.orders_hall(fk_order_id);
+
 
 --
 -- Заказы (самовывоз)
@@ -102,9 +106,11 @@ CREATE TABLE kafe_v1.orders_hall
 CREATE TABLE kafe_v1.orders_take_out
 (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    phone_number VARCHAR(11) UNIQUE NOT NULL,
+    phone VARCHAR(11) UNIQUE NOT NULL,
     fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
 );
+
+CREATE INDEX idx_order_orders_take_out ON kafe_v1.orders_take_out(fk_order_id);
 
 
 --
