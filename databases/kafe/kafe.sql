@@ -62,7 +62,7 @@ CREATE TABLE kafe_v1.waiters
 --
 CREATE TABLE kafe_v1.orders
 (
-    id BIGINT NOT NULL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     status VARCHAR(10) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
@@ -133,7 +133,7 @@ CREATE TABLE kafe_v1.dishes
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
-    fk_category_id INT REFERENCES kafe_v1.categories(id)
+    fk_category_id SMALLINT REFERENCES kafe_v1.categories(id)
 );
 
 
@@ -143,8 +143,7 @@ CREATE TABLE kafe_v1.dishes
 --
 CREATE TABLE kafe_v1.orders_dishes
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     amount SMALLINT DEFAULT 1,
-    fk_order_id INT REFERENCES kafe_v1.orders(id),
-    fk_dish_id INT REFERENCES kafe_v1.dishes(id)
+    fk_order_id BIGINT REFERENCES kafe_v1.orders(id),
+    fk_dish_id SMALLINT REFERENCES kafe_v1.dishes(id)
 );

@@ -114,11 +114,11 @@ CREATE OR REPLACE PROCEDURE kafe_v1.create_data_delivery(fid INT) AS $$
     INSERT INTO kafe_v1.customers(name, phone, discount)
     VALUES(kafe_v1.generate_name(), kafe_v1.generate_phone_number(), kafe_v1.generate_boolean_value());
 
-    SELECT title, description, price
+    SELECT title, description, price, is_available, fk_category_id
     FROM kafe_v1.dishes;
 
-    INSERT INTO kafe_v1.orders(number, status, created)
-    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
+    INSERT INTO kafe_v1.orders(status, created_at)
+    VALUES('ACCEPTED', now());
 
     INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
     VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(267));
@@ -129,7 +129,7 @@ CREATE OR REPLACE PROCEDURE kafe_v1.create_data_delivery(fid INT) AS $$
     SELECT pg_sleep(20); 
     
     UPDATE kafe_v1.orders
-    SET status = 'CLOSED', updated = now()
+    SET status = 'CLOSED', updated_at = now()
     WHERE id = fid;
 
 $$ LANGUAGE sql;
@@ -140,22 +140,22 @@ $$ LANGUAGE sql;
 --
 CREATE OR REPLACE PROCEDURE kafe_v1.create_data_take_out(fid INT) AS $$
 
-    SELECT title, description, price
+    SELECT title, description, price, is_available, fk_category_id
     FROM kafe_v1.dishes;
 
-    INSERT INTO kafe_v1.orders(number, status, created)
-    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
+    INSERT INTO kafe_v1.orders(status, created_at)
+    VALUES('ACCEPTED', now());
 
     INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
     VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(271));
 
-    INSERT INTO kafe_v1.orders_take_out(phone_number, fk_order_id)
+    INSERT INTO kafe_v1.orders_take_out(phone, fk_order_id)
     VALUES(kafe_v1.generate_phone_number(), fid);
 
     SELECT pg_sleep(20); 
     
     UPDATE kafe_v1.orders
-    SET status = 'CLOSED', updated = now()
+    SET status = 'CLOSED', updated_at = now()
     WHERE id = fid;
 
 $$ LANGUAGE sql;
@@ -166,11 +166,11 @@ $$ LANGUAGE sql;
 --
 CREATE OR REPLACE PROCEDURE kafe_v1.create_data_hall(fid INT) AS $$
 
-    SELECT title, description, price
+    SELECT title, description, price, is_available, fk_category_id
     FROM kafe_v1.dishes;
 
-    INSERT INTO kafe_v1.orders(number, status, created)
-    VALUES(kafe_v1.generate_order_number(), 'ACCEPTED', now());
+    INSERT INTO kafe_v1.orders(status, created_at)
+    VALUES('ACCEPTED', now());
 
     INSERT INTO kafe_v1.orders_dishes(amount, fk_order_id, fk_dish_id)
     VALUES(kafe_v1.generate_num(5), fid, kafe_v1.generate_num(271));
@@ -181,7 +181,7 @@ CREATE OR REPLACE PROCEDURE kafe_v1.create_data_hall(fid INT) AS $$
     SELECT pg_sleep(20); 
     
     UPDATE kafe_v1.orders
-    SET status = 'CLOSED', updated = now()
+    SET status = 'CLOSED', updated_at = now()
     WHERE id = fid;
 
 $$ LANGUAGE sql;
