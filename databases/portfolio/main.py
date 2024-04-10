@@ -58,7 +58,7 @@ def main(symbol, interval, cursor):
     )'''
     
     cursor.execute(
-        "INSERT INTO spot(m_symbol, m_time, m_open, m_high, m_low, m_close) VALUES (%s, %s, %s, %s, %s, %s)",
+        "INSERT INTO qts.quotes(m_symbol, m_time, m_open, m_high, m_low, m_close) VALUES (%s, %s, %s, %s, %s, %s)",
         (
             symbol.replace("_", "").lower(), 
             datetime.fromtimestamp(data['m_time'][-1]), 
