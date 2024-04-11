@@ -25,14 +25,13 @@ CREATE TABLE ms.users
     CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$')
 );
 
+-- Создание пользователя
 CREATE OR REPLACE PROCEDURE ms.create_user(
     input_email VARCHAR(255), 
     input_password VARCHAR(100)
     ) AS $$
-
     INSERT INTO ms.users(email, password) 
     VALUES(input_email, crypt(input_password, gen_salt('md5')));
-
 $$ LANGUAGE sql;
 
 
@@ -49,15 +48,21 @@ CREATE TABLE ms.portfolios
 
 CREATE INDEX idx_portfolios_user ON ms.portfolios(fk_user_id);
 
+-- Создание портфеля
 CREATE OR REPLACE PROCEDURE ms.create_portfolio(
     input_title VARCHAR(200), 
     input_is_published BOOLEAN,
     input_user_id INT
     ) AS $$
-
     INSERT INTO ms.portfolios(title, is_published, fk_user_id)
     VALUES(input_title, input_is_published, input_user_id);
-    
+$$ LANGUAGE sql;
+
+-- Вывод портфелей пользователя
+CREATE OR REPLACE PROCEDURE ms.get_portfolio(input_user_id INT) AS $$
+    SELECT id, title, is_published
+    FROM ms.portfolios
+    WHERE fk_user_id = input_user_id;
 $$ LANGUAGE sql;
 
 
@@ -76,6 +81,15 @@ CREATE TABLE ms.tokens
     ))
 );
 
+-- Вывод токенов определенного портфеля
+CREATE OR REPLACE PROCEDURE ms.get_tokens_portfolio(input_portfolio_id INT) AS $$
+    SELECT DISTINCT ms.tokens.id, symbol description
+    FROM ms.tokens
+    JOIN ms.transactions ON ms.transactions.fk_token_id = ms.tokens.id
+    WHERE fk_portfolio_id = input_portfolio
+    ORDER BY symbol;
+$$ LANGUAGE sql;
+
 
 --
 -- Транзакции (добавление/удаление тикера в портфеле)
@@ -93,16 +107,15 @@ CREATE TABLE ms.transactions
 CREATE INDEX idx_transaction_portfolio ON ms.transactions(fk_portfolio_id);
 CREATE INDEX idx_transaction_token ON ms.transactions(fk_token_id);
 
+-- Создание транзакции
 CREATE OR REPLACE PROCEDURE ms.create_transaction(
     input_action_type VARCHAR(4),
     input_amount REAL,
     input_portfolio_id INT,
     input_token_id INT
     ) AS $$
-
     INSERT INTO ms.transactions(action_type, amount, fk_portfolio_id, fk_token_id)
     VALUES(input_action_type, input_amount, input_portfolio_id, input_token_id);
-
 $$ LANGUAGE sql;
 
 
@@ -131,7 +144,7 @@ FOR VALUES FROM ('2024-06-01') TO ('2024-07-01');
 CREATE TABLE qts.quotes_202407 PARTITION OF qts.quotes
 FOR VALUES FROM ('2024-07-01') TO ('2024-08-01');
 
-
+-- Получение последней цены закрытия определенного тикера
 CREATE OR REPLACE PROCEDURE qts.get_price(input_symbol VARCHAR(10)) AS $$
     SELECT m_close AS last_price 
     FROM qts.quotes 
