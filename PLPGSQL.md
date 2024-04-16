@@ -14,8 +14,7 @@ pl/pgSQL расширяет возможности базы данных Postgre
 
 Синтаксис функции на pl/pgSQL:
 ```sql
-CREATE OR REPLACE FUNCTION calc_sum(a INTEGER, b INTEGER) 
-        RETURNS INTEGER AS $$
+CREATE OR REPLACE FUNCTION calc_sum(a INTEGER, b INTEGER) RETURNS INTEGER AS $$
     DECLARE 
         sum INTEGER;    -- Объявление переменной
     BEGIN
@@ -64,8 +63,7 @@ $$
 
 Ключевое слово <b>SETOF</b> в функциях SQL указывает, что функция возвращает набор значений, то есть результатом функции будет таблица или набор строк. В примере функция вернет набор значений типа users (что является таблицей, или, иначе говоря в данной ситуации - пользовательским типом данных):
 ```sql
-CREATE FUNCTION get_users() 
-        RETURNS SETOF users AS $$
+CREATE FUNCTION get_users() RETURNS SETOF users AS $$
     BEGIN
     RETURN QUERY SELECT * FROM users;
     END;
@@ -78,8 +76,7 @@ SELECT * FROM get_users();      -- Возвращает все значения 
 
 Условная конструкция, синтаксис функций pl/pgSQL:
 ```sql
-CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC) 
-        RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC) RETURNS TEXT AS $$
     DECLARE
         result TEXT;
     BEGIN
