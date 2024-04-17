@@ -29,7 +29,7 @@ INSERT INTO ms.portfolios(title, is_published, fk_user_id)
 SELECT
     LEFT((md5(random()::text)), 5),
     CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
-    (SELECT id FROM ms.portfolios where id = ms.generate_num(500))
+    ms.generate_num(500)
 FROM generate_series(1, 675);
 
 
@@ -38,6 +38,6 @@ INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_
 SELECT
     CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
     ms.generate_num(1000),
-    (SELECT id FROM ms.portfolios where id = ms.generate_num(675)),
+    ms.generate_num(675),
     ms.generate_num(8)
 FROM generate_series(1, 100000);

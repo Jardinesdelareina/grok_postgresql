@@ -59,6 +59,7 @@ CREATE TABLE ms.portfolios
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(200) UNIQUE NOT NULL,
+    balance REAL DEFAULT 0,
     is_published BOOLEAN DEFAULT TRUE,
     fk_user_id INT REFERENCES ms.users(id)
 );
