@@ -19,6 +19,30 @@ CREATE OR REPLACE PROCEDURE ms.create_portfolio(
 $$ LANGUAGE sql;
 
 
+-- Вывод списка портфелей определенного пользователя
+CREATE OR REPLACE FUNCTION ms.get_portfolios(input_user_id INT) 
+RETURNS SETOF ms.portfolios AS $$
+    BEGIN
+        RETURN QUERY SELECT id, title, balance, is_published, fk_user_id
+                    FROM ms.portfolios 
+                    WHERE fk_user_id = input_user_id;
+    END;
+$$ LANGUAGE plpgsql;
+
+
+-- Вывод криптовалют определенного портфеля
+CREATE OR REPLACE FUNCTION ms.get_currencies_portfolio(input_portfolio_id INT) 
+RETURNS SETOF ms.currencies AS $$
+    BEGIN
+	    RETURN QUERY SELECT DISTINCT ms.currencies.id, symbol, description
+                FROM ms.currencies
+                JOIN ms.transactions ON ms.transactions.fk_currency_id = ms.currencies.id
+                WHERE fk_portfolio_id = input_portfolio_id
+                ORDER BY id;
+	END;
+$$ LANGUAGE plpgsql;
+
+
 -- Создание транзакции
 CREATE OR REPLACE PROCEDURE ms.create_transaction(
     input_action_type VARCHAR(4),
@@ -32,7 +56,7 @@ $$ LANGUAGE sql;
 
 
 -- Расчет объема транзакции в usdt
-CREATE OR REPLACE FUNCTION ms.get_value_transaction(input_transaction_id INT) 
+CREATE OR REPLACE FUNCTION ms.get_value_transaction(input_transaction_id BIGINT) 
 RETURNS REAL AS $$
 DECLARE
     qty_transaction REAL;
@@ -58,7 +82,40 @@ BEGIN
     FROM qty_currency;
     RETURN qty_transaction;
 END;
-    
 $$ LANGUAGE plpgsql;
 
-select ms.get_value_transaction(1);
+
+CREATE OR REPLACE FUNCTION ms.get_balance_portfolio(input_portfolio_id INT) 
+RETURNS REAL AS $$
+DECLARE
+    current_balance REAL;
+    tr RECORD;
+BEGIN
+
+    FOR tr IN 
+        SELECT id, action_type, quantity, created_at, fk_portfolio_id, fk_currency_id
+        FROM ms.transactions
+        WHERE fk_portfolio_id = input_portfolio_id
+        ORDER BY created_at
+    LOOP
+        IF tr.action_type = 'BUY' THEN
+            current_balance := current_balance + ms.get_value_transaction(tr.id);
+        ELSIF tr.action_type = 'SELL' THEN
+            current_balance := current_balance - ms.get_value_transaction(tr.id);
+        END IF;
+        
+        UPDATE ms.portfolios
+        SET balance = current_balance
+        WHERE id = input_portfolio_id;
+    END LOOP;
+    RETURN current_balance;
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER ms.update_balance_portfolio
+AFTER INSERT ON ms.transactions
+FOR EACH ROW
+BEGIN
+    
+END;
