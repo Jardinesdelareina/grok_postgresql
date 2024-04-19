@@ -117,5 +117,6 @@ CREATE TRIGGER ms.update_balance_portfolio
 AFTER INSERT ON ms.transactions
 FOR EACH ROW
 BEGIN
-    
+    UPDATE ms.portfolios
+    SET balance
 END;
