@@ -188,10 +188,10 @@ SELECT fib(5);
 ```sql
 CREATE OR REPLACE FUNCTION get_employee_info(employee_id INT)
 RETURNS TABLE (first_name TEXT, last_name TEXT) AS $$
-BEGIN
-    EXECUTE 'SELECT first_name, last_name FROM employees WHERE id = $1' INTO first_name, last_name USING employee_id;
-    RETURN NEXT;
-END;
+    BEGIN
+        EXECUTE 'SELECT first_name, last_name FROM employees WHERE id = $1' INTO first_name, last_name USING employee_id;
+        RETURN NEXT;
+    END;
 $$ LANGUAGE plpgsql;
 ```
 
@@ -206,24 +206,48 @@ $$ LANGUAGE plpgsql;
 
 ```sql
 CREATE OR REPLACE FUNCTION get_employees_salary() RETURNS SETOF emp_salary AS $$
-DECLARE
-    emp_record employees%ROWTYPE;
-    emp_cursor CURSOR FOR SELECT * FROM employees;
-BEGIN
-    OPEN emp_cursor;
-    LOOP
-        FETCH emp_cursor INTO emp_record;
-        EXIT WHEN NOT FOUND;
-        
-        -- дополнительная обработка данных (например, подсчет суммарной зарплаты)
-        
-        RETURN NEXT emp_record;
-    END LOOP;
-    CLOSE emp_cursor;
-END;
+    DECLARE
+        emp_record employees%ROWTYPE;
+        emp_cursor CURSOR FOR SELECT * FROM employees;
+    BEGIN
+        OPEN emp_cursor;
+        LOOP
+            FETCH emp_cursor INTO emp_record;
+            EXIT WHEN NOT FOUND;
+            
+            -- дополнительная обработка данных (например, подсчет суммарной зарплаты)
+            
+            RETURN NEXT emp_record;
+        END LOOP;
+        CLOSE emp_cursor;
+    END;
 $$ LANGUAGE plpgsql;
 ```
 
 В приведенном примере функции get_employees_salary создается курсор emp_cursor, который выбирает все данные из таблицы employees. Затем с помощью цикла LOOP обрабатывается каждая запись, извлеченная из курсора, сохраняется в переменную emp_record, и при необходимости выполняются дополнительные операции (например, подсчет суммарной зарплаты). После этого запись возвращается с помощью RETURN NEXT.
 
 Курсоры в PL/pgSQL могут быть полезны, когда нужно обработать результирующий набор построчно и выполнить дополнительные операции с каждой строкой. Однако, следует помнить о затратности использования курсоров в плане производительности, поэтому стоит использовать их с умом в случаях, когда это необходимо и возможно эффективное выполнение операций.
+
+
+### Обработка ошибок
+
+Обработка ошибок осуществляется с помощью блока операторов EXCEPTION:
+
+```sql
+CREATE OR REPLACE FUNCTION divide_numbers(x INT, y INT) RETURNS FLOAT AS $$
+    DECLARE
+        result FLOAT;
+    BEGIN
+        BEGIN
+            result := x / y;
+        EXCEPTION
+            WHEN division_by_zero THEN
+                RAISE EXCEPTION 'Division by zero error';
+        END;
+        
+        RETURN result;
+    END;
+$$ LANGUAGE plpgsql;
+```
+
+В данном примере функция divide_numbers принимает два целых числа x и y, и возвращает результат их деления. Внутри блока операторов `EXCEPTION` проверяется, если происходит деление на ноль, то генерируется ошибка с сообщением "Division by zero error".
