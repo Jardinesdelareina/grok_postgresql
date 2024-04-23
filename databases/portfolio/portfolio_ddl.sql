@@ -82,7 +82,7 @@ CREATE TABLE ms.currencies
 
 
 --
--- Транзакции (добавление/удаление тикера в портфеле)
+-- Транзакции (покупка/продажа тикера в портфеле)
 --
 CREATE TABLE ms.transactions
 (
@@ -93,8 +93,3 @@ CREATE TABLE ms.transactions
     fk_portfolio_id INT REFERENCES ms.portfolios(id),
     fk_currency_id INT REFERENCES ms.currencies(id)
 );
-
-
-CREATE INDEX idx_portfolios_user ON ms.portfolios(fk_user_id);
-CREATE INDEX idx_transaction_portfolio ON ms.transactions(fk_portfolio_id);
-CREATE INDEX idx_transaction_currency ON ms.transactions(fk_currency_id);
