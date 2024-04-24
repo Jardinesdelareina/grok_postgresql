@@ -1,3 +1,12 @@
+CREATE OR REPLACE PROCEDURE ms.create_user(
+    input_email VARCHAR(255), 
+    input_password VARCHAR(100)
+    ) AS $$
+    INSERT INTO ms.users(email, password)
+    VALUES(input_email, crypt(input_password, gen_salt('md5')));
+$$ LANGUAGE sql;
+
+
 -- Создание портфеля
 CREATE OR REPLACE PROCEDURE ms.create_portfolio(
     input_title VARCHAR(200), 

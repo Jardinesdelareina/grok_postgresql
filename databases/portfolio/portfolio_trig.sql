@@ -29,7 +29,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Изменение баланса портфеля в зависимости от параметров транзакции
-CREATE OR REPLACE FUNCTION update_balance() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION ms.update_balance() RETURNS trigger AS $$
 DECLARE
     transaction_quantity REAL;
 BEGIN
@@ -57,5 +57,5 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER update_balance_trigger
-AFTER ROW UPDATE ON ms.portfolios
-FOR EACH ROW EXECUTE update_balance();
+AFTER UPDATE ON ms.portfolios
+FOR EACH ROW EXECUTE FUNCTION ms.update_balance();

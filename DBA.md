@@ -246,7 +246,7 @@ WHERE 'replication' = ANY(database);
 ALTER ROLE user_name REPLICATION;
 ```
 
-'sudo mkdir /var/lib/postgresql/14/replica'     создание директории для копии базы данных
+`sudo mkdir /var/lib/postgresql/14/replica`     создание директории для копии базы данных
 
 или
 
