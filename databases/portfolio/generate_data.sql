@@ -41,3 +41,47 @@ SELECT
     ms.generate_num(675),
     ms.generate_num(8)
 FROM generate_series(1, 100000);
+
+
+select symbol from ms.currencies;
+select * from qts.quotes;
+
+CALL ms.create_user('fueros.dev@mail.ru', '1234');
+CALL ms.create_portfolio('test portfolio', true, 1);
+CALL ms.create_transaction('BUY', 3, 1, 1);
+CALL ms.create_transaction('BUY', 2, 1, 1);
+
+SELECT * FROM ms.users;
+SELECT * FROM ms.portfolios WHERE fk_user_id = 1;
+SELECT * FROM ms.transactions;
+
+SELECT qts.get_price('avaxusdt');
+
+
+WITH qty FROM (
+    SELECT action_type, quantity, created_at, fk_portfolio_id
+    FROM ms.transactions
+    WHERE fk_portfolio_id = 1
+    ORDER BY id
+)
+
+SELECT SUM(quantity) AS balance FROM qty;
+
+
+CREATE OR REPLACE FUNCTION calculate_total_quantity(input_portfolio_id INT)
+RETURNS REAL AS $$
+DECLARE
+    total_quantity REAL := 0;
+BEGIN
+    SELECT 
+        SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END)
+    INTO 
+        total_quantity
+    FROM 
+        ms.transactions t
+    WHERE 
+        t.fk_portfolio_id = input_portfolio_id;
+    
+    RETURN total_quantity;
+END;
+$$ LANGUAGE plpgsql;
