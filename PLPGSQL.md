@@ -306,3 +306,70 @@ CREATE TRIGGER flights_v_upd_trigger
 INSTEAD OF UPDATE ON flights_v
 FOR EACH ROW EXECUTE FUNCTION flights_v_update();
 ```
+
+
+### RAISE
+
+Команда RAISE предназначена для вывода сообщений и вызова ошибок. В простом случае для отладки нужно добавить вызовы RAISE NOTICE в код функции, запустить функцию на выполнение и проанализировать получаемые по ходу выполнения сообщения. Сообщения RAISE нетранзакционные: они отправляются асинхронно и не зависят от статуса завершения транзакции. 
+
+Для управления отправкой сообщений используются уровень сообщения (DEBUG, LOG, NOTICE, INFO, WARNING) и параметры сервера. 
+
+В консоль выведется текстовое сообщение, переданное параметром в debug_message:
+```sql
+CREATE PROCEDURE debug_message(msg TEXT)
+AS $$
+BEGIN
+	RAISE NOTICE '%', msg;
+END
+$$ LANGUAGE plpgsql;
+```
+
+Выдача сообщений с уровнем, установленным в app.raise_level:
+```sql
+CREATE OR REPLACE PROCEDURE debug_message(msg TEXT)
+AS $$
+BEGIN
+    CASE current_setting('app.raise_level', true)
+        WHEN 'NOTICE'  THEN RAISE NOTICE  '%, %, %', user, clock_timestamp(), msg;
+        WHEN 'DEBUG'   THEN RAISE DEBUG   '%, %, %', user, clock_timestamp(), msg;
+        WHEN 'LOG'     THEN RAISE LOG     '%, %, %', user, clock_timestamp(), msg;
+        WHEN 'INFO'    THEN RAISE INFO    '%, %, %', user, clock_timestamp(), msg;
+        WHEN 'WARNING' THEN RAISE WARNING '%, %, %', user, clock_timestamp(), msg;
+        ELSE NULL; -- все прочие значения отключают вывод сообщений
+    END CASE;
+END
+$$ LANGUAGE plpgsql;
+```
+
+Определение уровня (например NOTICE):
+```sql
+SET app.raise_level TO 'NOTICE';
+```
+
+
+### Запись сообщений в файл
+
+Установка расширения:
+```sql
+CREATE EXTENSION adminpack;
+```
+
+Создание процедуры с функционалом записи:
+```sql
+CREATE OR REPLACE PROCEDURE debug_message(msg TEXT)
+AS $$
+DECLARE
+    filename CONSTANT TEXT := '/var/lib/postgresql/log.txt';
+    message TEXT;
+BEGIN
+    message := format(E'%s, %s, %s\n',
+        session_user, clock_timestamp()::TEXT, debug_message.msg
+    );
+    PERFORM pg_file_write(filename, message, /* append */ true);
+END
+$$ LANGUAGE plpgsql;
+```
+
+Чтение созданного файла с записями 
+
+`sudo cat /var/lib/postgresql/log.txt`

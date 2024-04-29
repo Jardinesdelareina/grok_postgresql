@@ -75,7 +75,6 @@ RETURNS REAL AS $$
 DECLARE
     total_quantity REAL := 0;
 BEGIN
-
     SELECT SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity 
                     ELSE -t.quantity 
                     END) * ms.get_value_transaction(t.id) 
