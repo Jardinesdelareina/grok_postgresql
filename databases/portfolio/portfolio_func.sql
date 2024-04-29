@@ -6,7 +6,7 @@ RETURNS REAL AS $$
     WHERE m_symbol = input_symbol
     ORDER BY m_time DESC 
     LIMIT 1;
-$$ LANGUAGE sql;
+$$ LANGUAGE sql VOLATILE;
 
 
 -- Вывод списка портфелей определенного пользователя
@@ -19,7 +19,7 @@ BEGIN
                 WHERE fk_user_id = input_user_id;
 
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Вывод криптовалют определенного портфеля
@@ -34,7 +34,7 @@ BEGIN
             ORDER BY id;
 	
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Расчет объема транзакции в usdt
@@ -66,7 +66,7 @@ BEGIN
 
     RETURN qty_transaction;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Вывод баланса портфеля в usdt
@@ -85,7 +85,7 @@ BEGIN
 
     RETURN total_quantity;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Вывод криптовалют, их количества и балансов в портфеле
@@ -100,11 +100,11 @@ BEGIN
 	GROUP BY id;
     
     RETURN total_quantity;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Вывод криптовалют и их балансов в портфеле
 CREATE OR REPLACE FUNCTION ms.get_total_balance_user(input_user_id INT) 
 RETURNS REAL AS $$
 
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;

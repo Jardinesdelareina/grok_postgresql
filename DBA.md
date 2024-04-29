@@ -132,6 +132,25 @@ CREATE ROLE alice LOGIN CREATEROLE;
 CREATE ROLE bob LOGIN;
 ```
 
+##### Предопределенные роли
+
+`pg_read_all_settings`  чтение всех параметров сервера
+
+`pg_read_all_stats`     доступ к статистике
+
+`pg_stat_scan_tables`   мониторинг и блокировки таблиц
+
+`pg_read_all_data`      чтение данных из всех таблиц
+
+`pg_write_all_data`     изменение данных во всех таблицах
+
+`pg_read_server_files`      чтение файлов на сервере
+
+`pg_write_server_files`     запись в файлы на сервере
+
+`pg_execute_server_programs`    выполнение программ на сервере
+
+
 ##### Примеры использования управления привелегиями
 
 `CREATE ROLE new_user WITH LOGIN PASSWORD 'new_password' VALID UNTIL '2022-12-31';`      создание пользователя и пароля и установление срока учетной записи

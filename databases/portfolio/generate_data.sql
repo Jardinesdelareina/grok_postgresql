@@ -20,7 +20,7 @@ TRUNCATE TABLE ms.users CASCADE;
 INSERT INTO ms.users(email, password)
 SELECT
     LEFT((md5(random()::text)), 10) || '@gmail.com',
-    LEFT((md5(random()::text)), 8)
+    crypt(LEFT((md5(random()::text)), 8, gen_salt('md5')))
 FROM generate_series(1, 500);
 
 
@@ -66,22 +66,3 @@ WITH qty FROM (
 )
 
 SELECT SUM(quantity) AS balance FROM qty;
-
-
-CREATE OR REPLACE FUNCTION calculate_total_quantity(input_portfolio_id INT)
-RETURNS REAL AS $$
-DECLARE
-    total_quantity REAL := 0;
-BEGIN
-    SELECT 
-        SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END)
-    INTO 
-        total_quantity
-    FROM 
-        ms.transactions t
-    WHERE 
-        t.fk_portfolio_id = input_portfolio_id;
-    
-    RETURN total_quantity;
-END;
-$$ LANGUAGE plpgsql;
