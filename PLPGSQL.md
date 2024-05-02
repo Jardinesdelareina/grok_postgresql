@@ -64,9 +64,9 @@ $$
 Ключевое слово <b>SETOF</b> в функциях SQL указывает, что функция возвращает набор значений, то есть результатом функции будет таблица или набор строк. В примере функция вернет набор значений типа users (что является таблицей, или, иначе говоря в данной ситуации - пользовательским типом данных):
 ```sql
 CREATE FUNCTION get_users() RETURNS SETOF users AS $$
-    BEGIN
+BEGIN
     RETURN QUERY SELECT * FROM users;
-    END;
+END;
 $$ LANGUAGE plpgsql;
 
 SELECT * FROM get_users();      -- Возвращает все значения из таблицы users
@@ -77,21 +77,21 @@ SELECT * FROM get_users();      -- Возвращает все значения 
 Условная конструкция, синтаксис функций pl/pgSQL:
 ```sql
 CREATE OR REPLACE FUNCTION check_grade(grade NUMERIC) RETURNS TEXT AS $$
-    DECLARE
-        result TEXT;
-    BEGIN
-        IF grade >= 90 THEN
-            result := 'A';
-        ELSEIF grade >= 80 THEN     -- Допустимый синтаксис ELSIF и ELSEIF
-            result := 'B';
-        ELSIF grade >= 70 THEN
-            result := 'C';
-        ELSE
-            result := 'F';
-        END IF;
+DECLARE
+    result TEXT;
+BEGIN
+    IF grade >= 90 THEN
+        result := 'A';
+    ELSEIF grade >= 80 THEN     -- Допустимый синтаксис ELSIF и ELSEIF
+        result := 'B';
+    ELSIF grade >= 70 THEN
+        result := 'C';
+    ELSE
+        result := 'F';
+    END IF;
         
-        RETURN result;
-    END;
+    RETURN result;
+END;
 $$ LANGUAGE plpgsql;
 ```
 
@@ -235,18 +235,18 @@ $$ LANGUAGE plpgsql;
 
 ```sql
 CREATE OR REPLACE FUNCTION divide_numbers(x INT, y INT) RETURNS FLOAT AS $$
-    DECLARE
-        result FLOAT;
+DECLARE
+    result FLOAT;
+BEGIN
     BEGIN
-        BEGIN
-            result := x / y;
-        EXCEPTION
-            WHEN division_by_zero THEN
-                RAISE EXCEPTION 'Division by zero error';
-        END;
-        
-        RETURN result;
+        result := x / y;
+    EXCEPTION
+        WHEN division_by_zero THEN
+            RAISE EXCEPTION 'Division by zero error';
     END;
+        
+    RETURN result;
+END;
 $$ LANGUAGE plpgsql;
 ```
 

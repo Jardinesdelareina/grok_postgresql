@@ -96,10 +96,11 @@ BEGIN
     SELECT DISTINCT fk_currency_id, SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity 
                                             ELSE -t.quantity END) AS qty_currency
     FROM ms.transactions t
-    JOIN ms.currencies c ON t.id
-	GROUP BY id;
+    JOIN ms.currencies c ON t.id = c.id
+    WHERE t.fk_portfolio_id = input_portfolio_id
+	GROUP BY fk_currency_id;
     
-    RETURN total_quantity;
+END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 
