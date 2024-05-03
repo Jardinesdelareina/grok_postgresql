@@ -104,7 +104,7 @@ END;
 $$ LANGUAGE plpgsql VOLATILE;
 
 
--- Вывод криптовалют и их балансов в портфеле
+-- Вывод совокупного баланса пользователя
 CREATE OR REPLACE FUNCTION ms.get_total_balance_user(input_user_id INT) 
 RETURNS REAL AS $$
 
