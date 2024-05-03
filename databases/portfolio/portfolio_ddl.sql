@@ -86,9 +86,11 @@ CREATE TABLE ms.currencies
 CREATE TABLE ms.transactions
 (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    action_type VARCHAR(4) CHECK (action_type IN ('BUY', 'SELL')) DEFAULT 'BUY',
+    action_type VARCHAR(4) DEFAULT 'BUY',
     quantity REAL NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     fk_portfolio_id INT REFERENCES ms.portfolios(id),
-    fk_currency_id INT REFERENCES ms.currencies(id)
+    fk_currency_id INT REFERENCES ms.currencies(id),
+
+    CONSTRAINT valid_action_type CHECK (action_type IN ('BUY', 'SELL'))
 );
