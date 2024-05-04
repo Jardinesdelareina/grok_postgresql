@@ -1,3 +1,25 @@
+CREATE OR REPLACE FUNCTION ms.symbol_id(input_symbol_id INT) 
+RETURNS VARCHAR(10) AS $$
+DECLARE
+    symbol_id INT := input_symbol_id;
+    symbol VARCHAR(10);
+BEGIN
+    IF symbol_id = 1 THEN symbol := 'btcusdt';
+    ELSIF symbol_id = 2 THEN symbol := 'ethusdt';
+    ELSIF symbol_id = 3 THEN symbol := 'solusdt';
+    ELSIF symbol_id = 2 THEN symbol := 'xrpusdt';
+    ELSIF symbol_id = 2 THEN symbol := 'adausdt';
+    ELSIF symbol_id = 2 THEN symbol := 'avaxusdt';
+    ELSIF symbol_id = 2 THEN symbol := 'dotusdt';
+    ELSIF symbol_id = 2 THEN symbol := 'linkusdt';
+    ELSE RAISE WARNING 'Несуществующий тикер';
+    END IF;
+ 
+    RETURN symbol;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
 -- Получение последней цены закрытия определенного тикера
 CREATE OR REPLACE FUNCTION qts.get_price(input_symbol VARCHAR(10)) 
 RETURNS REAL AS $$
@@ -93,8 +115,14 @@ CREATE OR REPLACE FUNCTION ms.get_balance_ticker_portfolio(input_portfolio_id IN
 RETURNS SETOF ms.transactions AS $$
 BEGIN
 
-    SELECT DISTINCT fk_currency_id, SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity 
-                                            ELSE -t.quantity END) AS qty_currency
+    SELECT DISTINCT 
+        ms.symbol_id(fk_currency_id), 
+        SUM(
+            CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
+        ) AS qty_currency, 
+        SUM(
+            CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
+        ) * qts.get_price(ms.symbol_id(fk_currency_id)) AS usdt_qty_currency
     FROM ms.transactions t
     JOIN ms.currencies c ON t.id = c.id
     WHERE t.fk_portfolio_id = input_portfolio_id

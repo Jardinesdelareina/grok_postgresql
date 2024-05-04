@@ -56,13 +56,3 @@ SELECT * FROM ms.portfolios WHERE fk_user_id = 1;
 SELECT * FROM ms.transactions;
 
 SELECT qts.get_price('avaxusdt');
-
-
-WITH qty FROM (
-    SELECT action_type, quantity, created_at, fk_portfolio_id
-    FROM ms.transactions
-    WHERE fk_portfolio_id = 1
-    ORDER BY id
-)
-
-SELECT SUM(quantity) AS balance FROM qty;

@@ -15,13 +15,13 @@ pl/pgSQL расширяет возможности базы данных Postgre
 Синтаксис функции на pl/pgSQL:
 ```sql
 CREATE OR REPLACE FUNCTION calc_sum(a INTEGER, b INTEGER) RETURNS INTEGER AS $$
-    DECLARE 
-        sum INTEGER;    -- Объявление переменной
-    BEGIN
-        sum := a + b;   -- Присвоение значения переменной
-    RETURN
-        sum;            -- Возвращение переменной (функция calc_sum() возвращает переменную sum) 
-    END
+DECLARE 
+    sum INTEGER;    -- Объявление переменной
+BEGIN
+    sum := a + b;   -- Присвоение значения переменной
+RETURN
+    sum;            -- Возвращение переменной (функция calc_sum() возвращает переменную sum) 
+END;
 $$ LANGUAGE plpgsql;
 
 SELECT calc_sum(5, 3);  -- Вызов функции
