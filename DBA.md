@@ -102,14 +102,21 @@
 `CREATE ROLE <роль> [WITH] <атрибут> [атрибут ...]`
 
 <em>LOGIN</em>   возможность подключения
+
 <em>SUPERUSER</em>   суперпользователь
+
 <em>CREATEDB</em>    возможность создавать базы данных
+
 <em>CREATEROLE</em>  возможность создавать роли
+
 <em>REPLICATION</em>     использование протокола репликации
+
 и др.
 
 Создаем базу данных
-`CREATE DATABASE access_roles`
+```sql
+CREATE DATABASE access_roles;`
+```
 
 Подключение к базе данных
 `\c access_roles`
@@ -161,9 +168,9 @@ CREATE ROLE bob LOGIN;
 
 `ALTER ROLE your_username NOLOGIN;`     лишение пользователя возможности подключения в базе данных
 
-`GRANT alice TO postgres`   включение alice в роль postgres
+`GRANT alice TO postgres;`   включение alice в роль postgres
 
-`REVOKE alice TO postgres`  исключение alice из роли postgres
+`REVOKE alice TO postgres;`  исключение alice из роли postgres
 
 
 ##### Access priveleges
