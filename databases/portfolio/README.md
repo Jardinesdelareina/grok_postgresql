@@ -116,7 +116,9 @@ Portfolio - это сервис для составления криптовал
 |create_user|Процедура|input_email VARCHAR(255) - ввод email, input_password VARCHAR(100) - ввод пароля|Создание пользователя, ввод регистрационных данных|
 |create_portfolio|Процедура|input_title VARCHAR(200) - ввод названия портфеля, input_is_published BOOLEAN - установка публичности, input_user_id INT - ввод идентификатора пользователя, которому принадлежит портфель|Создание криптовалютного портфеля|
 |get_portfolios|Функция|input_user_id INT - идентификатор пользователя|Вывод списка портфелей определенного пользователя|
+|update_portfolio|Процедура|input_portfolio_id INT - идентификатор портфеля, input_portfolio_title VARCHAR(200) - новое значение title, input_portfolio_is_published BOOLEAN - новое значение is_published|Изменение параметров портфеля|
 |get_balance_portfolio|Функция|input_portfolio_id INT - идентификатор портфолио|Вывод баланса портфеля в usdt|
 |create_transaction|Процедура|input_action_type VARCHAR(4) - ввод типа транзакции, input_quantity REAL - ввод количества криптовалюты, input_portfolio_id INT - ввод идентификатора портфеля, input_currency_id INT - ввод индентификатора криптовалюты|Создание транзакции|
-|get_currencies_portfolio|Функция|input_portfolio_id INT - идентификатор портфеля|Вывод списка криптовалют определенного портфеля|
 |get_value_transaction|Функция|input_transaction_id BIGINT - идентификатор транзакции|Расчет объема транзакции в usdt|
+|get_balance_ticker_portfolio|Функция|input_portfolio_id INT - идентификатор портфеля|Вывод криптовалют, их количества и балансов в портфеле|
+|get_total_balance_user|Функция|input_user_id BIGINT - идентификатор пользователя|Вывод совокупного баланса пользователя|

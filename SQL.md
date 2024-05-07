@@ -311,7 +311,7 @@ CREATE TABLE new_table
 Изменить в таблице table_name в колонке column_name атрибут с id 5:
 ```sql
 UPDATE table_name
-SET column_name
+SET column_name = 'update_name'
 WHERE id = 5;
 ```
 

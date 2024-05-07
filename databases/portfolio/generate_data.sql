@@ -50,6 +50,7 @@ CALL ms.create_user('fueros.dev@mail.ru', '1234');
 CALL ms.create_portfolio('test portfolio', true, 1);
 CALL ms.create_transaction('BUY', 3, 1, 1);
 CALL ms.create_transaction('BUY', 2, 1, 1);
+CALL ms.create_transaction('BUY', 20, 2, 2);
 
 SELECT * FROM ms.users;
 SELECT * FROM ms.portfolios WHERE fk_user_id = 1;

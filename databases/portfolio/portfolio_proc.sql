@@ -18,6 +18,19 @@ CREATE OR REPLACE PROCEDURE ms.create_portfolio(
 $$ LANGUAGE sql;
 
 
+-- Изменение параметров портфеля
+CREATE OR REPLACE PROCEDURE ms.update_portfolio(
+    input_portfolio_id INT,
+    input_portfolio_title VARCHAR(200),
+    iortfolio_is_published BOOLEnput_pAN
+    ) AS $$
+    UPDATE ms.portfolios
+    SET title = input_portfolio_title,
+        is_published = input_portfolio_is_published
+    WHERE id = input_portfolio_id;
+$$ LANGUAGE sql;
+
+
 -- Создание транзакции
 CREATE OR REPLACE PROCEDURE ms.create_transaction(
     input_action_type VARCHAR(4),
