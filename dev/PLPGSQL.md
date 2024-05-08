@@ -244,7 +244,6 @@ BEGIN
         WHEN division_by_zero THEN
             RAISE EXCEPTION 'Division by zero error';
     END;
-        
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;

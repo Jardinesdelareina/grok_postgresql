@@ -63,7 +63,7 @@ BEGIN
         WHEN 6 THEN (SELECT qts.get_price('avaxusdt'))
         WHEN 7 THEN (SELECT qts.get_price('dotusdt'))
         WHEN 8 THEN (SELECT qts.get_price('linkusdt'))
-        ELSE 0
+        ELSE RAISE WARNING 'Несуществующий тикер';
     END * quantity
     FROM qty_currency;
     RETURN qty_transaction;
@@ -76,13 +76,16 @@ CREATE OR REPLACE FUNCTION ms.get_balance_portfolio(input_portfolio_id INT)
 RETURNS REAL AS $$
 DECLARE total_quantity REAL := 0;
 BEGIN
-    SELECT SUM(CASE WHEN t.action_type = 'BUY' THEN t.quantity 
-                    ELSE -t.quantity 
-                    END) * qts.get_price(ms.symbol_id(t.fk_currency_id))
+    SELECT SUM(
+        CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
+    ) * qts.get_price(ms.symbol_id(t.fk_currency_id))
     INTO total_quantity
     FROM ms.transactions t
     WHERE t.fk_portfolio_id = input_portfolio_id
 	GROUP BY fk_currency_id;
+    IF total_quantity < 0 THEN 
+        total_quantity = 0;
+	END IF;
     RETURN total_quantity;
 END;
 $$ LANGUAGE plpgsql VOLATILE;

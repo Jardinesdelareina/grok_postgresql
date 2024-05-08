@@ -37,7 +37,7 @@ CREATE OR REPLACE PROCEDURE ms.create_transaction(
     input_quantity REAL,
     input_portfolio_id INT,
     input_currency_id INT
-    ) AS $$
+    ) AS $$Z
     INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
     VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_id);
 $$ LANGUAGE sql;
