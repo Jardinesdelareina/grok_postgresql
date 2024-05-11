@@ -189,7 +189,9 @@ SELECT fib(5);
 CREATE OR REPLACE FUNCTION get_employee_info(employee_id INT)
 RETURNS TABLE (first_name TEXT, last_name TEXT) AS $$
     BEGIN
-        EXECUTE 'SELECT first_name, last_name FROM employees WHERE id = $1' INTO first_name, last_name USING employee_id;
+        EXECUTE 'SELECT first_name, last_name FROM employees WHERE id = $1' 
+        INTO first_name, last_name 
+        USING employee_id;
         RETURN NEXT;
     END;
 $$ LANGUAGE plpgsql;
