@@ -22,11 +22,11 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE ms.update_portfolio(
     input_portfolio_id INT,
     input_portfolio_title VARCHAR(200),
-    iortfolio_is_published BOOLEnput_pAN
+    input_is_published BOOLEAN
     ) AS $$
     UPDATE ms.portfolios
     SET title = input_portfolio_title,
-        is_published = input_portfolio_is_published
+        is_published = input_is_published
     WHERE id = input_portfolio_id;
 $$ LANGUAGE sql;
 
@@ -37,7 +37,7 @@ CREATE OR REPLACE PROCEDURE ms.create_transaction(
     input_quantity REAL,
     input_portfolio_id INT,
     input_currency_id INT
-    ) AS $$Z
+    ) AS $$
     INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
     VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_id);
 $$ LANGUAGE sql;

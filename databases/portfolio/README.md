@@ -29,6 +29,16 @@ Portfolio - это сервис для составления криптовал
 
 ### Схема 'ms'
 
+#### Домены 
+
+|Title|Type|Params|Description|
+|---|---|---|---|
+|valid_email|Type|VARCHAR(255)|Валидация email|
+|valid_symbol|Type|VARCHAR(10)|Валидация тикеров, ограничение списка тикеров|
+|valid_action_type|VARCHAR(4)|Params|Валидация названия действия, ограничение списка действий|
+|valid_time|TIMESTAMPTZ|Params|Валидация времени, округление до минут|
+
+
 #### Таблица 'users'
 
 Таблица пользователей сервиса. Она хранит авторизационные данные и связана с таблицей `portfolios` связью one-to-many (пользователь может иметь несколько портфелей).
@@ -36,14 +46,8 @@ Portfolio - это сервис для составления криптовал
 |FK|PK|Column|Type|Length|Unique|Nullable|Description|
 |---|---|---|---|---|---|---|---|
 ||*|id|int||*|*|Идентификатор записи|
-|||email|varchar|255|*|*|Адрес электронной почты пользователя|
+|||email|valid_email||*|*|Адрес электронной почты пользователя|
 |||password|varchar|100||*|Зашифрованный пароль пользователя|
-
-Ограничения:
-
-|Title|Column|Description|
-|---|---|---|
-|valid_email|email|Валидация ввода электронной почты|
 
 
 #### Таблица 'portfolios'
@@ -71,14 +75,8 @@ Portfolio - это сервис для составления криптовал
 |FK|PK|Column|Type|Length|Unique|Nullable|Description|
 |---|---|---|---|---|---|---|---|
 ||*|id|int||*|*|Идентификатор записи|
-|||symbol|varchar|10||*|Тикер криптовалюты|
+|||symbol|valid_symbol|||*|Тикер криптовалюты|
 |||description|text||||Описание криптовалюты|
-
-Ограничения:
-
-|Title|Column|Description|
-|---|---|---|
-|valid_symbol|symbol|Валидация названия тикера, создание определенного списка тикеров|
 
 
 #### Таблица 'transactions'
@@ -88,18 +86,11 @@ Portfolio - это сервис для составления криптовал
 |FK|PK|Column|Type|Length|Unique|Nullable|Description|
 |---|---|---|---|---|---|---|---|
 ||*|id|bigint||*|*|Идентификатор записи|
-|||action_type|varchar|4||*|Тип транзакции, по-умолчанию BUY|
+|||action_type|valid_action_type|||*|Тип транзакции, по-умолчанию BUY|
 |||quantity|real|||*|Количество криптовалюты в транзакции|
-|||created_at|timestamptz|||*|Время создания транзакции, по-умолчанию текущее время|
+|||created_at|valid_time|||*|Время создания транзакции, по-умолчанию текущее время|
 |portfolios(id)||fk_portfolio_id|int|||*|Идентификатор портфеля, в рамках которого происходит транзакция|
 |currencies(id)||fk_currency_id|int|||*|Идентификатор криптовалюты, с которой происходит транзакция|
-
-Ограничения:
-
-|Title|Column|Description|
-|---|---|---|
-|valid_action_type|action_type|Валидация типа действия, выбор типа транзакции - BUY или SELL|
-
 
 Индексы:
 

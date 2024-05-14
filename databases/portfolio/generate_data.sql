@@ -16,31 +16,37 @@ VALUES('btcusdt', 'Биткоин (BTC) — первая криптовалют�
 ('linkusdt', 'Chainlink (LINK) — сеть-«оракул», предназначенная для объединения смарт-контрактов с реальными данными. Была основана в результате ICO в сентябре 2017 года Сергеем Назаровым и Стивом Эллисом. LINK является токеном стандарта ERC20 с функционалом ERC223. Оракулы — объекты вне сети блокчейна, которые поставляют информацию для смарт-контрактов.');
 
 
-TRUNCATE TABLE ms.users CASCADE;
-INSERT INTO ms.users(email, password)
-SELECT
-    LEFT((md5(random()::text)), 10) || '@gmail.com',
-    crypt(LEFT((md5(random()::text)), 8, gen_salt('md5')))
-FROM generate_series(1, 500);
+CREATE PROCEDURE create_test_user(num INT) AS $$ 
+    TRUNCATE TABLE ms.users CASCADE;
+    INSERT INTO ms.users(email, password)
+    SELECT
+        LEFT((md5(random()::text)), 10) || '@gmail.com',
+        crypt(LEFT((md5(random()::text)), 8, gen_salt('md5')))
+    FROM generate_series(1, num);
+$$ LANGUAGE sql;
 
 
-TRUNCATE TABLE ms.portfolios CASCADE;
-INSERT INTO ms.portfolios(title, is_published, fk_user_id)
-SELECT
-    LEFT((md5(random()::text)), 5),
-    CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
-    ms.generate_num(500)
-FROM generate_series(1, 675);
+CREATE PROCEDURE create_test_portfolio(num INT) AS $$ 
+    TRUNCATE TABLE ms.portfolios CASCADE;
+    INSERT INTO ms.portfolios(title, is_published, fk_user_id)
+    SELECT
+        LEFT((md5(random()::text)), 5),
+        CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
+        ms.generate_num(500)
+    FROM generate_series(1, num);
+$$ LANGUAGE sql;
 
 
-TRUNCATE TABLE ms.transactions CASCADE;
-INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
-SELECT
-    CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
-    ms.generate_num(1000),
-    ms.generate_num(675),
-    ms.generate_num(8)
-FROM generate_series(1, 100000);
+CREATE PROCEDURE create_test_transaction(num INT) AS $$ 
+    TRUNCATE TABLE ms.transactions CASCADE;
+    INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
+    SELECT
+        CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
+        ms.generate_num(1000),
+        ms.generate_num(675),
+        ms.generate_num(8)
+    FROM generate_series(1, num);
+$$ LANGUAGE sql;
 
 
 select symbol from ms.currencies;
@@ -48,6 +54,7 @@ select * from qts.quotes;
 
 CALL ms.create_user('fueros.dev@mail.ru', '1234');
 CALL ms.create_portfolio('test portfolio', true, 1);
+CALL ms.create_portfolio('test portfolio2', true, 1);
 CALL ms.create_transaction('BUY', 3, 1, 1);
 CALL ms.create_transaction('BUY', 2, 1, 1);
 CALL ms.create_transaction('BUY', 20, 2, 2);

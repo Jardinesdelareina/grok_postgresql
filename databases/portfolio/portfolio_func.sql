@@ -1,6 +1,6 @@
 -- Назначение id определенному тикеру
 CREATE OR REPLACE FUNCTION ms.symbol_id(input_symbol_id INT) 
-RETURNS VARCHAR(10) AS $$
+RETURNS ms.valid_symbol AS $$
 DECLARE
     symbol_id INT := input_symbol_id;
     symbol VARCHAR(10);
@@ -21,7 +21,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 
 -- Получение последней цены закрытия определенного тикера
-CREATE OR REPLACE FUNCTION qts.get_price(input_symbol VARCHAR(10)) 
+CREATE OR REPLACE FUNCTION qts.get_price(input_symbol ms.valid_symbol) 
 RETURNS REAL AS $$
     SELECT m_close AS last_price 
     FROM qts.quotes 
@@ -29,6 +29,17 @@ RETURNS REAL AS $$
     ORDER BY m_time DESC 
     LIMIT 1;
 $$ LANGUAGE sql VOLATILE;
+
+
+-- Получение нужной котировки по выбранному тикеру в выбранный момент времени
+CREATE OR REPLACE FUNCTION qts.get_price_with_time(
+    input_symbol ms.valid_symbol,
+    input_time TIMESTAMPTZ
+) RETURNS REAL AS $$
+    SELECT m_close AS current_price
+    FROM qts.quotes
+    WHERE m_symbol = input_symbol AND m_time = input_time
+$$ LANGUAGE sql IMMUTABLE;
 
 
 -- Вывод списка портфелей определенного пользователя
@@ -43,32 +54,21 @@ $$ LANGUAGE plpgsql VOLATILE;
 
 
 -- Расчет объема транзакции в usdt
-CREATE OR REPLACE FUNCTION ms.get_value_transaction(input_transaction_id BIGINT) 
+CREATE OR REPLACE FUNCTION ms.get_value_transaction(input_transaction_id UUID) 
 RETURNS REAL AS $$
-DECLARE
-    qty_transaction REAL;
+DECLARE qty_transaction REAL;
 BEGIN
     WITH qty_currency AS (
-        SELECT quantity, t.fk_currency_id AS curr
+        SELECT t.created_at, t.quantity, t.fk_currency_id AS curr
         FROM ms.transactions t
         WHERE t.id = input_transaction_id
     )
-    SELECT INTO qty_transaction
-    CASE curr
-        WHEN 1 THEN (SELECT qts.get_price('btcusdt'))
-        WHEN 2 THEN (SELECT qts.get_price('ethusdt'))
-        WHEN 3 THEN (SELECT qts.get_price('solusdt'))
-        WHEN 4 THEN (SELECT qts.get_price('xrpusdt'))
-        WHEN 5 THEN (SELECT qts.get_price('adausdt'))
-        WHEN 6 THEN (SELECT qts.get_price('avaxusdt'))
-        WHEN 7 THEN (SELECT qts.get_price('dotusdt'))
-        WHEN 8 THEN (SELECT qts.get_price('linkusdt'))
-        ELSE RAISE WARNING 'Несуществующий тикер';
-    END * quantity
+    SELECT quantity * qts.get_price_with_time(ms.symbol_id(curr), created_at)
+	INTO qty_transaction
     FROM qty_currency;
     RETURN qty_transaction;
 END;
-$$ LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql IMMUTABLE;
 
 
 -- Вывод баланса портфеля в usdt
@@ -78,7 +78,7 @@ DECLARE total_quantity REAL := 0;
 BEGIN
     SELECT SUM(
         CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
-    ) * qts.get_price(ms.symbol_id(t.fk_currency_id))
+    ) * qts.get_price_with_time(ms.symbol_id(t.fk_currency_id), t.created_at)
     INTO total_quantity
     FROM ms.transactions t
     WHERE t.fk_portfolio_id = input_portfolio_id
@@ -93,7 +93,7 @@ $$ LANGUAGE plpgsql VOLATILE;
 
 -- Вывод криптовалют, их количества и балансов в портфеле
 CREATE OR REPLACE FUNCTION ms.get_balance_ticker_portfolio(input_portfolio_id INT) 
-RETURNS TABLE(symbol VARCHAR(10), qty_currency REAL, usdt_qty_currency REAL) AS $$
+RETURNS TABLE(symbol ms.valid_symbol, qty_currency REAL, usdt_qty_currency REAL) AS $$
 BEGIN
     RETURN QUERY SELECT DISTINCT 
         ms.symbol_id(fk_currency_id) AS symbol, 
@@ -104,7 +104,7 @@ BEGIN
             CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
         ) * qts.get_price(ms.symbol_id(fk_currency_id)) AS usdt_qty_currency
     FROM ms.transactions t
-    JOIN ms.currencies c ON t.id = c.id
+    JOIN ms.currencies c ON t.fk_currency_id = c.id
     WHERE t.fk_portfolio_id = input_portfolio_id
 	GROUP BY fk_currency_id;
 END;

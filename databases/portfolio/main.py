@@ -50,7 +50,7 @@ def main(symbol, interval, cursor):
     }
     '''print(
         symbol.replace("_", "").lower(), 
-        datetime.fromtimestamp(data['m_time'][-1]), 
+        datetime.fromtimestamp(data['m_time'][-1]).replace(second=0, microsecond=0), 
         data['m_open'][-1], 
         data['m_high'][-1], 
         data['m_low'][-1], 
@@ -61,7 +61,7 @@ def main(symbol, interval, cursor):
         "INSERT INTO qts.quotes(m_symbol, m_time, m_open, m_high, m_low, m_close) VALUES (%s, %s, %s, %s, %s, %s)",
         (
             symbol.replace("_", "").lower(), 
-            datetime.fromtimestamp(data['m_time'][-1]), 
+            datetime.fromtimestamp(data['m_time'][-1]).replace(second=0, microsecond=0), 
             data['m_open'][-1], 
             data['m_high'][-1], 
             data['m_low'][-1], 
