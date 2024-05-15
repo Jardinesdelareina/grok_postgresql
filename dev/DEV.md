@@ -412,3 +412,72 @@ COMMIT;
 `sudo service pgbouncer restart`    перезагрузка сервера
 
 `psql -h localhost -p 6432 -U postgres_user -d postgres_db`     авторизация пользователя в базе данных (порт 6432 - стандартный для pgBouncer)
+
+
+
+### dblink
+
+Это расширение, которое предназначено для выполнения SQL-запросов на удаленном сервере PostgreSQL. 
+
+Первый параметр функции — строка соединения, второй — команда, которую надо выполнить.
+```sql
+SELECT * FROM dblink(
+    'host=localhost port=5432 dbname=postgres user=postgres password=postgres',
+    $$ SELECT * FROM generate_series(1,3); $$
+) AS (result integer);
+```
+
+Команда, не возвращающая никакие строки:
+```sql
+SELECT * FROM dblink_exec(
+    'host=localhost port=5432 dbname=postgres user=postgres password=postgres',
+    $$ VACUUM; $$
+);
+```
+
+Явное управление соединением, для этого после скобок прописывается имя:
+```sql
+SELECT * FROM dblink_connect(
+    'remote',
+    'host=localhost port=5432 dbname=postgres user=postgres password=postgres'
+);
+```
+
+Закрытие соединения:
+```sql
+SELECT * FROM dblink_disconnect('remote');
+```
+
+Текущие открытые соединения:
+```sql
+SELECT * FROM dblink_get_connections();
+```
+
+Управление транзакциями вручную:
+```sql
+SELECT * FROM dblink_exec(
+    'remote',
+    $$ BEGIN; $$
+);
+
+SELECT * FROM dblink(
+    'remote',
+    $$ SELECT pg_backend_pid(); $$
+) AS t(pid integer);
+
+SELECT * FROM dblink_exec(
+    'remote',
+    $$ COMMIT; $$
+);
+```
+
+Выполнение асинхронных вызовов:
+```sql
+SELECT * FROM dblink_send_query(
+    'remote',
+    $$ SELECT 'done' FROM pg_sleep(10); $$
+);
+```
+
+`dblink_is_busy('remote')`  проверка, выполняется ли еще запрос
+`dblink_get_result('remote')`   получение результата запроса
