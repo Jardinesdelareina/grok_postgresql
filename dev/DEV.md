@@ -358,6 +358,9 @@ COMMIT;
 Важно использовать `SELECT FOR UPDATE` аккуратно, чтобы избежать длительных блокировок и конфликтов между транзакциями. Эта конструкция полезна в случаях, когда нужно обеспечить целостность данных при выполнении операций чтения и записи.
 
 
+`SKIP LOCKED` - это опция запроса, которая позволяет игнорировать заблокированные строки, то есть строки, которые уже заблокированы другими транзакциями. При использовании этой опции, запрос будет пропускать заблокированные строки и обрабатывать только свободные строки. Это может быть полезно, если нужно избежать ожидания блокировки и продолжить выполнение запроса без прерывания.
+
+
 ### Пул соединений
 
 Пул соединений (connection pool) в PostgreSQL представляет собой механизм, который позволяет управлять и переиспользовать соединения к базе данных. При каждом запросе к базе данных требуется установить соединение, выполнить запрос и закрыть соединение. Однако постоянное открытие и закрытие соединений может быть ресурсоемким процессом.
@@ -483,6 +486,8 @@ SELECT * FROM dblink_send_query(
 `dblink_is_busy('remote')`  проверка, выполняется ли еще запрос
 `dblink_get_result('remote')`   получение результата запроса
 
+Весь доступный функционал `dblink` можно найти [на странице документации](hhttps://postgrespro.ru/docs/postgresql/14/dblink). 
+
 
 ### pg_background
 
@@ -503,3 +508,58 @@ SELECT * FROM pg_background_result(<pid процесса>) AS (result integer);
 ```
 
 `pg_background_detach`   отключает текущий процесс от ожидания результатов фонового процесса.   
+
+
+### Асинхронная обработка
+
+Пример цикла обработки асинхронных сообщений (когда в очереди не остается необработанных сообщений):
+```sql
+CREATE PROCEDURE process_queue() AS $$
+DECLARE
+    msg msg_queue;
+BEGIN
+    LOOP
+        SELECT * INTO msg FROM take_message();
+        EXIT WHEN msg.id IS NULL;
+
+        -- обработка
+        PERFORM pg_sleep(1);
+        RAISE NOTICE '[%] processed %; backend_xmin=%',
+            pg_backend_pid(),
+            msg.payload,
+            (SELECT backend_xmin FROM pg_stat_activity
+             WHERE pid = pg_backend_pid());
+
+        PERFORM complete_message(msg);
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+Данное решение имеет большой недостаток - это одна большая транзакция. Обработка очереди в данном случае будет мешать нормальной работе очистки. Чтобы этого избежать, нужно каждое событие вынести в отдельную транзакцию. Нужно раздробить длинную транзакцию на несколько более коротких. В нашем случае — обрабатывать каждое событие в собственной транзакции.
+
+Пример реализации:
+```sql
+CREATE OR REPLACE PROCEDURE process_queue() AS $$
+DECLARE
+    msg msg_queue;
+BEGIN
+    LOOP
+        SELECT * INTO msg FROM take_message();
+        COMMIT; --<<
+        EXIT WHEN msg.id IS NULL;
+
+        -- обработка
+        PERFORM pg_sleep(1);
+        RAISE NOTICE '[%] processed %; backend_xmin=%',
+            pg_backend_pid(),
+            msg.payload,
+            (SELECT backend_xmin FROM pg_stat_activity
+             WHERE pid = pg_backend_pid());
+
+        PERFORM complete_message(msg);
+        COMMIT; --<<
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+```
