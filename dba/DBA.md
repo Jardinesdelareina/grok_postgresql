@@ -394,3 +394,9 @@ SELECT pg_relation_filepath('<название файла>');
 SELECT line_number, type, database, username, address, auth_method
 FROM pg_hba_file_rules;
 ```
+
+##### Вывод информации о процессе по его pid
+```sql
+SELECT query, backend_type, wait_event_type, wait_event
+FROM pg_stat_activity WHERE pid = <номер процесса>;
+```
