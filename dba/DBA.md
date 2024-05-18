@@ -337,7 +337,7 @@ SELECT name, setting
 FROM pg_settings 
 WHERE name IN ('wal_level', 'max_val_senders');
 ```
-
+:
 Проверка, включено ли разрешение на подключение по протоколу репликации
 ```sql
 SELECT type, database, user_name, address, auth_method
