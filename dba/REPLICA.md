@@ -57,6 +57,15 @@ WHERE database = ARRAY['replication'];
 `pg_basebackup --pgdata=/var/lib/postgresql/14/replica/* -R`
 
 
+Предоставление пользователю роли REPLICATION
+```sql
+ALTER ROLE user_name REPLICATION;
+
+
+Назначение postgres владельцем файлов каталога кластера
+`sudo chown -R postgres:postgres /var/lib/postgresql/14/replica`
+
+
 Проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
 `sudo pg_lsclusters`
 

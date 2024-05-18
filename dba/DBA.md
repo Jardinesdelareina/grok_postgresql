@@ -326,46 +326,6 @@ DELIMITER ',' указывает, что данные в файле раздел
 Восстановление базы данных с кастомными параметрами:
 `pg_restore -C -d dbname -h localhost -U username filename`
 
-
-##### Физическая копия
-
-<em>Автономная резервная копия</em>:
-
-Проверка, что включен параметр `replica` и сколько может быть включено процессов одновременно/var/lib/postgresql/14/
-```sql
-SELECT name, setting 
-FROM pg_settings 
-WHERE name IN ('wal_level', 'max_val_senders');
-```
-:
-Проверка, включено ли разрешение на подключение по протоколу репликации
-```sql
-SELECT type, database, user_name, address, auth_method
-FROM pg_hba_file_rules()
-WHERE 'replication' = ANY(database);
-```
-
-`sudo rm -rf /home/fueros/Desktop/grok_postgresql/databases/test_db/backup/*`  очистка каталога для резервной копии
-
-`pg_basebackup --pgdata=/home/fueros/Desktop/grok_postgresql/databases/test_db/backup -R`    создание резервной копии кластера (-R сформирует необходимые для репликации конфигурационные параметры)
-
-`pg_lsclusters`    проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
-
-Предоставить пользователю роль REPLICATION
-```sql
-ALTER ROLE user_name REPLICATION;
-```
-
-`sudo mkdir /var/lib/postgresql/14/replica`     создание директории для копии базы данных
-
-или
-
-`sudo rm -rf /var/lib/postgresql/14/replica/*`     очистка каталога кластера
-
-`sudo mv /home/fueros/Desktop/grok_postgresql/databases/test_db/backup/* /var/lib/postgresql/14/replica`   перемещение созданной копии в каталог кластера
-
-`sudo chown -R postgres:postgres /var/lib/postgresql/14/replica`     назначение postgres владельцем файлов каталога кластера
-
 -------------------------------------------------------------------------------------------------------
 
 ### Полезные функции PostgreSQL
