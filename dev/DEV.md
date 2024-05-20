@@ -563,3 +563,104 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 ```
+
+
+### Внешние данные
+
+Внешние данные представлены в PostgreSQL как таблицы, которые называются внешними или сторонними. С ними можно работать при помощи обычных команд DML: INSERT, UPDATE, DELETE, SELECT. На внешние таблицы можно создавать триггеры. А для разграничения прав используются команды GRANT, REVOKE.
+
+Основное отличие внешних таблиц от обычных в том, что данные физически не хранятся в БД PostgreSQL, а загружаются из внешней системы (отправляются во внешнюю систему) при выполнении запросов.Обертки сторонних данных могут быть весьма полезны и при миграции данных в PostgreSQL из других СУБД.
+
+Обертка сторонних данных определяет тип внешнего источника данных. 
+Расширение `postgres_fdw` реализует доступ к базам данных PostgreSQL, а `file_fdw` - доступ к файлам операционной системы.
+
+
+#### postgres_fdw
+
+`CREATE EXTENSION postgres_fdw;`
+
+
+Создание внешнего сервера
+```sql
+CREATE SERVER remote_server
+FOREIGN DATA WRAPPER postgres_fdw
+OPTIONS (
+    host 'localhost',
+    port '5432',
+    dbname 'portfolio'
+);
+```
+
+Сопоставление ролей, подключение текущего пользователя под ролью postgres на внешнем сервере
+```sql
+CREATE USER MAPPING FOR testuser
+SERVER remote_server
+OPTIONS (
+    user 'postgres',
+    password 'postgres'
+);
+```
+
+Создание внешней таблицы
+```sql
+CREATE FOREIGN TABLE remote_users (
+    id integer OPTIONS (column_name 'user_id') NOT NULL,
+    username text NOT NULL,
+    email text NOT NULL
+)
+SERVER remote_server
+OPTIONS (
+    schema_name 'public',
+    table_name 'users'
+);
+```
+
+Импорт схемы данных вместо переноса таблиц вручную (будут импортироваться только таблицы users, portfolios, transactions)
+```sql
+CREATE SCHEMA ms_remote;
+
+IMPORT FOREIGN SCHEMA ms
+LIMIT TO (users, portfolios, transactions)
+FROM SERVER remote_server
+INTO ms_remote;
+```
+
+
+#### file_fdw
+
+Расширения file_fdw позволяет обращаться к любому текстовому файлу и задействует тот же механизм, что и в команде COPY. 
+
+`CREATE EXTENSION file_fdw;`
+
+
+Запись таблицы в файл
+```SQL
+COPY (SELECT * FROM remote_users)
+TO '/var/lib/postgresql/users.txt'
+WITH (
+    format 'text',
+    delimiter '/'
+);
+```
+
+Чтение данных из файла
+```sql
+CREATE SERVER file_server
+    FOREIGN DATA WRAPPER file_fdw;
+
+
+CREATE FOREIGN TABLE file_users (
+    id integer,
+    username text,
+    email text
+)
+SERVER file_server
+OPTIONS (
+    filename '/var/lib/postgresql/users.txt',
+    format 'text',
+    delimiter '/'
+);
+
+
+SELECT * FROM file_users;
+```
