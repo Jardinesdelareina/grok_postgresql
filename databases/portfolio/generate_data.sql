@@ -1,4 +1,4 @@
-DROP FUNCTION ms.generate_num;
+DROP FUNCTION IF EXISTS ms.generate_num;
 CREATE OR REPLACE FUNCTION ms.generate_num(limit_num BIGINT) RETURNS INT AS $$
     SELECT floor(random() * limit_num) + 1;
 $$ LANGUAGE sql;
@@ -16,41 +16,42 @@ VALUES(1, 'btcusdt', 'Биткоин (BTC) — первая криптовалю
 (8, 'linkusdt', 'Chainlink (LINK) — сеть-«оракул», предназначенная для объединения смарт-контрактов с реальными данными. Была основана в результате ICO в сентябре 2017 года Сергеем Назаровым и Стивом Эллисом. LINK является токеном стандарта ERC20 с функционалом ERC223. Оракулы — объекты вне сети блокчейна, которые поставляют информацию для смарт-контрактов.');
 
 
-CREATE PROCEDURE ms.create_test_user(num INT) AS $$ 
-    TRUNCATE TABLE ms.users CASCADE;
-    INSERT INTO ms.users(email, password)
-    SELECT
-        LEFT((md5(random()::text)), 10) || '@gmail.com',
-        crypt(LEFT((md5(random()::text)), 8), gen_salt('md5'))
-    FROM generate_series(1, num);
-$$ LANGUAGE sql;
+DO $$
+BEGIN
+    FOR i IN 1..1000 LOOP
+        INSERT INTO ms.users(email, password)
+        VALUES (
+            'user' || i || '@gmail.com', 
+            crypt(LEFT((md5(random()::text)), 8), gen_salt('md5'))
+        );
+    END LOOP;
+END $$;
 
 
-CREATE PROCEDURE ms.create_test_portfolio(num INT) AS $$ 
-    TRUNCATE TABLE ms.portfolios CASCADE;
-    INSERT INTO ms.portfolios(title, is_published, fk_user_id)
-    SELECT
-        LEFT((md5(random()::text)), 5),
-        CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
-        ms.generate_num(115)
-    FROM generate_series(1, num);
-$$ LANGUAGE sql;
+DO $$
+BEGIN
+    FOR i IN 1..10000 LOOP
+        INSERT INTO ms.portfolios(title, is_published, fk_user_id)
+        VALUES (
+            'portfolio' || i, 
+            CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
+            ms.generate_num(900)
+        );
+    END LOOP;
+END $$;
 
 
-CREATE PROCEDURE ms.create_test_transaction(num INT) AS $$ 
-    TRUNCATE TABLE ms.transactions CASCADE;
-    INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
-    SELECT
-        CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
-        ms.generate_num(90),
-        ms.generate_num(633),
-        ms.generate_num(8)
-    FROM generate_series(1, num);
-$$ LANGUAGE sql;
+DO $$
+BEGIN
+    FOR i IN 1..50000 LOOP
+        INSERT INTO ms.transactions(action_type, quantity, fk_portfolio_id, fk_currency_id)
+        VALUES (
+            CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
+            ms.generate_num(90),
+            ms.generate_num(9500),
+            ms.generate_num(8)
+        );
+    END LOOP;
+END $$;
 
-
-CALL ms.create_test_user(154);
-CALL ms.create_test_portfolio(665);
-CALL ms.create_test_transaction(16994);
-
-
+select count(*) from ms.transactions;
