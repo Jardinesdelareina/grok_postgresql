@@ -82,7 +82,7 @@ BEGIN
     INTO total_quantity
     FROM ms.transactions t
     WHERE t.fk_portfolio_id = input_portfolio_id
-	GROUP BY fk_currency_id;
+	GROUP BY fk_currency_id, t.created_at;
     IF total_quantity < 0 THEN 
         total_quantity = 0;
 	END IF;

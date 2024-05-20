@@ -335,6 +335,11 @@ SELECT pg_size_pretty(pg_database_size('<название_базы_данных>
         pg_size_pretty(pg_tablespace_size('<название_табличного пространства>'));
 ```
 
+##### Вывод размера таблицы
+```sql
+SELECT pg_size_pretty(pg_total_relation_size('<название_таблицы>')) AS table_size;
+```
+
 ##### Вывод информации о параметрах конкретной базы данных
 ```sql
 SELECT * FROM pg_database WHERE datname = '<название_базы_данных>';
