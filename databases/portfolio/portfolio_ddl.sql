@@ -98,7 +98,7 @@ CREATE TABLE ms.portfolios
 --
 CREATE TABLE ms.currencies
 (
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id INT PRIMARY KEY,
     symbol ms.valid_symbol DEFAULT 'btcusdt',
     description TEXT
 );
