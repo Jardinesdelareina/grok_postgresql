@@ -44,13 +44,13 @@ $$ LANGUAGE sql IMMUTABLE;
 
 -- Вывод списка портфелей определенного пользователя
 CREATE OR REPLACE FUNCTION ms.get_portfolios(input_user_id INT) 
-RETURNS SETOF ms.portfolios AS $$
+RETURNS TABLE(title VARCHAR(200), is_published BOOLEAN) AS $$
 BEGIN
-    RETURN QUERY SELECT id, title, is_published, fk_user_id
-                FROM ms.portfolios 
+    RETURN QUERY SELECT p.title, p.is_published
+                FROM ms.portfolios p
                 WHERE fk_user_id = input_user_id;
 END;
-$$ LANGUAGE plpgsql VOLATILE;
+$$ LANGUAGE plpgsql STABLE;
 
 
 -- Расчет объема транзакции в usdt

@@ -1,3 +1,4 @@
 requests
 environs
 psycopg2-binary
+pyclean

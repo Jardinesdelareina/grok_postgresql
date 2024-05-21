@@ -1,34 +1,12 @@
 import requests
-import environs
-import psycopg2
 from datetime import datetime
 import time
-
-env = environs.Env()
-env.read_env('.env')
-
-DB_USER = env('DB_USER')
-DB_PASS = env('DB_PASS')
-DB_HOST = env('DB_HOST')
-DB_NAME = env('DB_NAME')
+from db import connection, cursor
 
 symbols = [
     'BTC_USDT', 'ETH_USDT', 'SOL_USDT', 'XRP_USDT',
     'ADA_USDT', 'AVAX_USDT', 'DOT_USDT', 'LINK_USDT',
 ]
-
-try:
-    connection = psycopg2.connect(
-        host=DB_HOST,
-        database=DB_NAME,
-        user=DB_USER,
-        password=DB_PASS
-    )
-    cursor = connection.cursor()
-
-except (Exception, psycopg2.Error) as error:
-    print("Ошибка подключения к базе данных:", error)
-
 
 
 def main(symbol, interval, cursor):
