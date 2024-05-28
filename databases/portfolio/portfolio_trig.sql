@@ -1,5 +1,5 @@
 -- Изменение баланса портфеля в зависимости от параметров транзакции
-CREATE OR REPLACE FUNCTION ms.alert_new_transaction() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION ms.alert_new_transaction() RETURNS TRIGGER AS $$
 BEGIN
     RAISE NOTICE 'Добавлена новая транзакция';
     RETURN NEW;
