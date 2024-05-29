@@ -59,6 +59,28 @@ CREATE TABLE qts.quotes
 
 
 --
+-- Рыночные ордера
+--
+CREATE TABLE qts.deals
+(
+    d_symbol ms.valid_symbol NOT NULL,
+    d_time TIMESTAMPTZ NOT NULL,
+    d_side VARCHAR(4) CHECK (d_side IN ('BUY', 'SELL')) NOT NULL,
+    d_price REAL NOT NULL,
+    d_qty REAL NOT NULL
+) PARTITION BY LIST (d_symbol);
+
+CREATE TABLE qts.deals_btcusdt PARTITION OF qts.deals FOR VALUES IN ('btcusdt');
+CREATE TABLE qts.deals_ethusdt PARTITION OF qts.deals FOR VALUES IN ('ethusdt');
+CREATE TABLE qts.deals_solusdt PARTITION OF qts.deals FOR VALUES IN ('solusdt');
+CREATE TABLE qts.deals_xrpusdt PARTITION OF qts.deals FOR VALUES IN ('xrpusdt');
+CREATE TABLE qts.deals_adausdt PARTITION OF qts.deals FOR VALUES IN ('adausdt');
+CREATE TABLE qts.deals_avaxusdt PARTITION OF qts.deals FOR VALUES IN ('avaxusdt');
+CREATE TABLE qts.deals_dotusdt PARTITION OF qts.deals FOR VALUES IN ('dotusdt');
+CREATE TABLE qts.deals_linkusdt PARTITION OF qts.deals FOR VALUES IN ('linkusdt');
+
+
+--
 -- Пользователи
 --
 CREATE TABLE ms.users
