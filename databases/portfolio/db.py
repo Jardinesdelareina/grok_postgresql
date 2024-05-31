@@ -21,7 +21,3 @@ try:
 except (Exception, psycopg2.Error) as error:
     print("Ошибка подключения к базе данных:", error)
 
-
-def create_query(sql: str):
-    cursor.execute(sql)
-    return cursor.fetchall()

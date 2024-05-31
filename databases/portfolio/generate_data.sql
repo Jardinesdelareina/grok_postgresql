@@ -6,7 +6,7 @@ $$ LANGUAGE sql;
 
 
 CALL ms.create_user('fueros.dev@mail.ru', '1234');
-CALL ms.create_user('emirdegranada@gmail.ru', '123456');
+CALL ms.create_user('developer@gmail.ru', '123456');
 
 CALL ms.create_portfolio('portfolio1btc', TRUE, 1);
 CALL ms.create_portfolio('cryptoportfolio', TRUE, 1);
@@ -19,8 +19,34 @@ CALL ms.create_transaction('BUY', 33, 2, 2);
 CALL ms.create_transaction('BUY', 3343, 2, 5);
 CALL ms.create_transaction('BUY', 3343, 3, 4);
 
+
 -- Запускать только при работающем потоке котировок
 -- Иначе не будет актуальных данных о времени транзакции (на текущее время не будет текущей котировки)
+DO $$
+BEGIN
+    FOR i IN 1..1000 LOOP
+        INSERT INTO ms.users(email, password)
+        VALUES (
+            'user' || i || '@gmail.com', 
+            crypt(LEFT((md5(random()::text)), 8), gen_salt('md5'))
+        );
+    END LOOP;
+END $$;
+
+
+DO $$
+BEGIN
+    FOR i IN 1..10000 LOOP
+        INSERT INTO ms.portfolios(title, is_published, fk_user_id)
+        VALUES (
+            'portfolio' || i, 
+            CASE WHEN random() < 0.1 THEN FALSE ELSE TRUE END,
+            ms.generate_num(900)
+        );
+    END LOOP;
+END $$;
+
+
 DO $$
 BEGIN
     FOR i IN 1..50000 LOOP

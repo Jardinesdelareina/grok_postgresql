@@ -78,7 +78,7 @@ DECLARE total_quantity REAL := 0;
 BEGIN
     SELECT SUM(
         CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
-    ) * qts.get_price_with_time(ms.symbol_id(t.fk_currency_id), t.created_at)
+    ) * qts.get_price(ms.symbol_id(t.fk_currency_id))
     INTO total_quantity
     FROM ms.transactions t
     WHERE t.fk_portfolio_id = input_portfolio_id
