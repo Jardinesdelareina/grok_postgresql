@@ -44,12 +44,12 @@ Portfolio - это сервис для составления криптовал
 
 #### Домены 
 
-|Title|Type|Params|Description|
-|---|---|---|---|
-|valid_email|Type|VARCHAR(255)|Валидация email|
-|valid_symbol|Type|VARCHAR(10)|Валидация тикеров, ограничение списка тикеров|
-|valid_action_type|VARCHAR(4)|Params|Валидация названия действия, ограничение списка действий|
-|valid_time|TIMESTAMPTZ|Params|Валидация времени, округление до минут|
+|Title|Type|Description|
+|---|---|---|
+|valid_email|VARCHAR(255)|Валидация email|
+|valid_symbol|VARCHAR(10)|Валидация тикеров, ограничение списка тикеров|
+|valid_action_type|VARCHAR(4)|Валидация названия действия, ограничение списка действий|
+|valid_time|TIMESTAMPTZ|Валидация времени, округление до минут|
 
 
 #### Таблица 'users'
