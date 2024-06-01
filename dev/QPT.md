@@ -496,3 +496,159 @@ SELECT n_distinct
 FROM pg_stats_ext 
 WHERE statistics_name = 'flights_nd';
 ```
+
+
+### Профилирование
+
+Профилирование - это процесс анализа выполнения запросов к базе данных с целью выявления узких мест, неэффективных операций или индексов, которые могут быть улучшены для улучшения производительности запросов. Собственно, весь смысл профилирования состоит в том, чтобы выяснить, что именно нуждается в оптимизации.
+
+Для получения профиля по выполняемым SQL-запросам есть два основных средства, встроенных в PostgreSQL: журнал сообщений сервера и статистика.
+
+<b>Инструменты профилирования:</b>
+
+[pg_profile](https://github.com/zubkov-andrei/pg_profile) - расширение, которое помогает обнаружить наиболее ресурсоемкие действия в базах данных PostgreSQL.
+
+[plprofiler](https://github.com/bigsql/plprofiler) - расширение, позволяющее профилировать как отдельно выполняемые скрипты, так и снимать профиль работающего сеанса. Расширение профилирует код на pl/pgSQL.
+
+[auto_explain](https://postgrespro.ru/docs/postgrespro/13/auto-explain) - включает автоматическое протоколирование планов выполнения медленных операторов, что позволяет обойтись без выполнения `EXPLAIN` вручную. 
+
+[pgbadger](https://github.com/darold/pgbadger) - анализатор журналов, созданный для быстрого предоставления подробных отчетов на основе файлов журналов PostgreSQL.
+
+
+### pg_stat_statements
+
+[pg_stat_statements](https://postgrespro.ru/docs/postgresql/13/pgstatstatements) - расширение, которое собирает достаточно подробную информацию о выполняемых запросах (в том числе в терминах ввода-вывода страниц) и отображает ее в представлении `pg_stat_statements`.
+
+Подключение расширения:
+```sql
+CREATE EXTENSION pg_stat_statements;
+
+ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';
+```
+
+После установки требуется перезагрузка сервера:
+`sudo pg_ctlcluster 14 main restart`
+
+
+Настройка расширения для сбора информации обо ВСЕХ запросах, в том числе и вложенных:
+`SET pg_stat_statements.track = 'all';`
+
+
+Представление для просмотра собранной статистики выполнения операторов:
+```sql
+CREATE VIEW statements_v AS
+SELECT substring(regexp_replace(query,' +',' ','g') FOR 55) AS query,
+  calls,
+  round(total_exec_time)/1000 AS time_sec,
+  shared_blks_hit + shared_blks_read + shared_blks_written AS shared_blks
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC;
+```
+
+
+Сброс счетчиков статистики, собранных и хранящихся в модуле `pg_stat_statements`. После выполнения этой функции, статистика будет начата заново с нуля, и все данные о запросах, которые были собраны ранее, будут утеряны.
+```sql
+SELECT pg_stat_statements_reset()
+```
+
+Вызов представления для просмотра статистики:
+```sql
+SELECT * FROM statements_v \gx
+```
+
+
+### EXPLAIN
+
+Команда `EXPLAIN` используется для анализа и оптимизации выполнения запросов. При использовании `EXPLAIN` перед запросом, PostgreSQL предоставляет информацию о плане выполнения запроса, включая порядок выполнения операций, использование индексов, стоимость операций и другую полезную информацию.
+
+Результат выполнения команды `EXPLAIN` представляет собой таблицу или дерево, которое обозначает порядок выполнения операций в запросе. Это дает возможность анализировать и понимать, как PostgreSQL будет выполнять запрос, и даёт возможность оптимизировать его производительность.
+
+Параметры, которые могут быть использованы с оператором `EXPLAIN`:
+
+1. `ANALYZE` - позволяет провести анализ запроса и вывести статистику выполнения запроса, такую как время выполнения, количество обработанных строк и использование индексов. При использовании команды `EXPLAIN ANALYZE`, кроме плана выполнения, будет произведено и фактическое выполнение запроса, собраны статистические данные и включено время выполнения каждой операции в плане.
+
+2. `FORMAT` - определяет формат вывода информации о выполнении запроса. Например, можно выбрать вывод в текстовом или JSON формате.
+
+3. `VERBOSE` - включает более детальный вывод информации о выполнении запроса, включая дополнительную статистику.
+
+4. `COSTS` - отображает стоимость выполнения операций и оценку optimizer'а по количеству обработанных строк.
+
+5. `BUFFERS` - отображает информацию о использовании буферов при выполнении запроса, такую как количество считанных и записанных страниц.
+
+
+```sql
+EXPLAIN (analyze, buffers, costs off, timing off)
+WITH t AS (
+  SELECT f.aircraft_code, 
+    count(*) FILTER (WHERE s.fare_conditions = 'Economy') economy,
+    count(*) FILTER (WHERE s.fare_conditions = 'Comfort') comfort,
+    count(*) FILTER (WHERE s.fare_conditions = 'Business') business 
+  FROM flights f 
+    JOIN boarding_passes bp ON bp.flight_id = f.flight_id 
+    JOIN seats s ON s.aircraft_code = f.aircraft_code AND s.seat_no = bp.seat_no 
+  GROUP BY f.aircraft_code
+)
+SELECT a.model,
+  coalesce(t.economy,0) economy, 
+  coalesce(t.comfort,0) comfort, 
+  coalesce(t.business,0) business 
+FROM aircrafts a
+  LEFT JOIN t ON a.aircraft_code = t.aircraft_code 
+ORDER BY a.model;
+
+
+                                                          QUERY PLAN                                                           
+-------------------------------------------------------------------------------------------------------------------------------
+ Sort (actual rows=9 loops=1)
+   Sort Key: ((ml.model ->> lang()))
+   Sort Method: quicksort  Memory: 25kB
+   Buffers: shared hit=4073 read=56839, temp read=20572 written=20572
+   ->  Hash Left Join (actual rows=9 loops=1)
+         Hash Cond: (ml.aircraft_code = t.aircraft_code)
+         Buffers: shared hit=4073 read=56839, temp read=20572 written=20572
+         ->  Seq Scan on aircrafts_data ml (actual rows=9 loops=1)
+               Buffers: shared hit=1
+         ->  Hash (actual rows=8 loops=1)
+               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+               Buffers: shared hit=4072 read=56839, temp read=20572 written=20572
+               ->  Subquery Scan on t (actual rows=8 loops=1)
+                     Buffers: shared hit=4072 read=56839, temp read=20572 written=20572
+                     ->  HashAggregate (actual rows=8 loops=1)
+                           Group Key: f.aircraft_code
+                           Batches: 1  Memory Usage: 24kB
+                           Buffers: shared hit=4072 read=56839, temp read=20572 written=20572
+                           ->  Hash Join (actual rows=7925812 loops=1)
+                                 Hash Cond: ((f.aircraft_code = s.aircraft_code) AND ((bp.seat_no)::text = (s.seat_no)::text))
+                                 Buffers: shared hit=4072 read=56839, temp read=20572 written=20572
+                                 ->  Hash Join (actual rows=7925812 loops=1)
+                                       Hash Cond: (bp.flight_id = f.flight_id)
+                                       Buffers: shared hit=4064 read=56839, temp read=20572 written=20572
+                                       ->  Seq Scan on boarding_passes bp (actual rows=7925812 loops=1)
+                                             Buffers: shared hit=1440 read=56839
+                                       ->  Hash (actual rows=214867 loops=1)
+                                             Buckets: 131072  Batches: 4  Memory Usage: 3127kB
+                                             Buffers: shared hit=2624, temp written=549
+                                             ->  Seq Scan on flights f (actual rows=214867 loops=1)
+                                                   Buffers: shared hit=2624
+                                 ->  Hash (actual rows=1339 loops=1)
+                                       Buckets: 2048  Batches: 1  Memory Usage: 79kB
+                                       Buffers: shared hit=8
+                                       ->  Seq Scan on seats s (actual rows=1339 loops=1)
+                                             Buffers: shared hit=8
+ Planning:
+   Buffers: shared hit=45
+ Planning Time: 0.657 ms
+ Execution Time: 5130.938 ms
+(40 rows)
+```
+
+Что происходит в плане выполнения запроса:
+* Сначала выполняется сортировка по ключу ((ml.model ->> lang())) с использованием метода quicksort и объемом памяти 25kB.
+* Затем происходит хеш-соединение двух таблиц (ml.aircraft_code и t.aircraft_code) с использованием буферов.
+* После этого выполняется последовательное сканирование таблицы aircrafts_data ml.
+* Затем идет хеш-присоединение сгруппированных данных из подзапроса к таблице t по ключу f.aircraft_code.
+* Далее происходит хеш-объединение таблиц f и s с использованием условия (bp.flight_id = f.flight_id).
+* После этого выполняется сканирование boarding_passes и flights.
+* Затем идет сканирование таблицы seats.
+* После всех операций планирование запроса завершается за 0.657 мс, с использованием общих буферов объемом 45.
+* Полное выполнение запроса занимает 5130.938 мс.

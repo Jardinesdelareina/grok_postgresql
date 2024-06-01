@@ -2,8 +2,8 @@
 prepare market_value (date) as
 select 
     d_symbol as symbol, 
-    sum(case when d_side = 'BUY' then d_qty else 0 end) as total_buy, 
-    sum(case when d_side = 'SELL' then d_qty else 0 end) as total_sell
+    sum(d_qty) filter (where d_side = 'BUY') as total_buy, 
+    sum(d_qty) filter (where d_side = 'SELL') as total_sell
 from 
     qts.deals
 where
