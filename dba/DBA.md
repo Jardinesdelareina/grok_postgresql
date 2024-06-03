@@ -40,6 +40,8 @@
 `sudo /usr/lib/postgresql/14/bin/pg_checksums --enable -D /var/lib/postgresql/14/main`      включение расчета контрольных сумм
 
 
+### Основные команды PostgreSQL в терминале Linux
+
 `sudo apt-get --purge remove postgresql\*`  удаление PostgreSQL и всех его компонентов
 
 `sudo apt install postgresql`   установка PostgreSQL
@@ -60,11 +62,13 @@
 
 `sudo -u postgres psql`     подключение к серверу, активация оболочки <b>psql</b>
 
-`psql -h localhost -U user_name db_name`     подключение по локальной сети к базе данных под определенным пользователем
+`psql -h localhost -U user_name -d db_name`     подключение по локальной сети к базе данных под определенным пользователем
+
+`psql -h localhost -U user_name -d db_name -c "SELECT * FROM table" > /path/to/file/output.txt`     запись результата запроса в файл
+
+`psql < filename` или `psql -f filename`    выполнение файла
 
 `sudo tail -n 10 /var/log/postgresql/postgresql-14-main.log`    вывод 10 последних записей из журнала сообщений сервера
-
-`psql -U username -d dbname -c "SELECT * FROM table" > /path/to/file/output.txt`  запись результата запроса в файл
 
 `\q`    выход из <b>psql</b>
 
@@ -140,8 +144,21 @@
 
 `\i <path_to_file_sql>`    открытие файла (используется для запуска скриптов .sql)
 
+`\gx`   расширенный режим отображения, только для одного запроса
 
-### Роли и привелегии
+
+
+
+#### Запись результатов запроса в файл
+
+`\o output.txt`     создание файла
+
+`SELECT schemaname, tablename, tableowner FROM pg_tables LIMIT 5;`
+
+`\! cat output`
+
+
+### Роли и прив`елегии
 
 `CREATE ROLE <роль> [WITH] <атрибут> [атрибут ...]`
 
