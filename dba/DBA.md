@@ -144,12 +144,10 @@
 
 `\i <path_to_file_sql>`    открытие файла (используется для запуска скриптов .sql)
 
-`\gx`   расширенный режим отображения, только для одного запроса
+`\gx`   расширенный режим отображения, только для одного запроса (ставится вместо точки с запятой)
 
 
-
-
-#### Запись результатов запроса в файл
+##### Запись результатов запроса в файл
 
 `\o output.txt`     создание файла
 
@@ -158,7 +156,110 @@
 `\! cat output`
 
 
-### Роли и прив`елегии
+### Конфиурирование сервера PostgreSQL
+
+Вывод всех незакоментированных параметров конфигурации из файла `postgresql.conf`:
+```sql
+SELECT sourceline, name, setting, applied
+FROM pg_file_settings
+WHERE sourcefile LIKE '/etc/postgresql/14/main/postgresql.conf';
+```
+
+Вывод действующих значений параметров из представления `pg_settings`:
+```sql
+SELECT name, setting, unit,
+  boot_val, reset_val,
+  source, sourcefile, sourceline,
+  pending_restart, context
+FROM pg_settings
+WHERE name = '<параметр>'\gx
+```
+
+Ключевые колонки представления `pg_settings`:
+* <b>name</b>, <b>setting</b>, <b>unit</b> — название и значение параметра;
+* <b>boot_val</b> — значение по умолчанию;
+* <b>reset_val</b> — значение, которое восстановит команда RESET;
+* <b>source</b> — источник текущего значения параметра;
+* <b>pending_restart</b> — значение изменено в файле конфигурации, но для применения требуется перезапуск сервера.
+
+Столбец `context` определяет действия, необходимые для применения параметра. Среди возможных значений:
+* <em>internal</em> — изменить нельзя, значение задано при установке;
+* <em>postmaster</em> — требуется перезапуск сервера;
+* <em>sighup</em> — требуется перечитать файлы конфигурации;
+* <em>superuser</em> — суперпользователь может изменить для своего сеанса;
+* <em>user</em> — любой пользователь может изменить для своего сеанса.
+
+
+Перечитать файлы конфигурации чтобы изменить значение параметра во всех сеансах:
+```sql
+SELECT pg_reload_conf();
+```
+
+
+#### postgresql.auto.conf
+
+Файл конфигурации, управляемый командами SQL. Этот файл не следует изменять вручную. Для его редактирования предназначена команда `ALTER SYSTEM`. По сути, эта команда представляет собой SQL-интерфейс для управления параметрами конфигурации.
+
+Для применения изменений, сделанных командой `ALTER SYSTEM`, сервер должен перечитать конфигурационные файлы, как и в случае с изменением файла postgresql.conf. Содержимое обоих файлов (postgresql.conf и postgresql.auto.conf) можно увидеть через представление `pg_file_settings`. А актуальные значения параметров — в представлении `pg_settings`.
+
+```sql
+ALTER SYSTEM SET port TO 5433;
+```
+или
+```sql
+SELECT set_config('port', 5433, false);
+```
+
+Третий параметр функции `set_config` говорит о том, нужно ли устанавливать значение только для текущей транзакции (true) или до конца работы сеанса (false). Это важно при работе приложения через пул соединений, когда в одном сеансе могут выполняться транзакции разных пользователей.
+
+
+```sql
+SHOW port;
+```
+или
+```sql
+SELECT current_setting('port');
+```
+
+`ALTER SYSTEM RESET <параметр>`     удаляет строку
+
+`ALTER SYSTEM RESET ALL`    удаляет все строки из postgresql.auto.conf
+
+
+Процесс изменения параметра `work_mem`:
+```sql
+ALTER SYSTEM SET work_mem TO '128MB';
+
+SELECT pg_reload_conf();
+```
+
+Установка параметров внутри транзакции:
+```sql
+BEGIN;
+SET LOCAL work_mem TO '64MB'; 
+SHOW work_mem;
+COMMIT;
+SHOW work_mem;
+
+ work_mem 
+----------
+ 64MB
+(1 row)
+
+COMMIT;
+
+SHOW work_mem;
+
+ work_mem 
+----------
+ 8MB
+(1 row)
+```
+
+<em>После завершения транзакции значения восстанавливаются. </em>
+
+
+### Роли и привелегии
 
 `CREATE ROLE <роль> [WITH] <атрибут> [атрибут ...]`
 
@@ -403,4 +504,11 @@ FROM pg_hba_file_rules;
 ```sql
 SELECT query, backend_type, wait_event_type, wait_event
 FROM pg_stat_activity WHERE pid = <номер процесса>;
+```
+
+##### Вывод всех незакоментированных параметров конфигурации из файла postgresql.conf
+```sql
+SELECT sourceline, name, setting, applied
+FROM pg_file_settings
+WHERE sourcefile LIKE '/etc/postgresql/13/main/postgresql.conf';
 ```
