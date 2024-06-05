@@ -119,7 +119,7 @@ SHOW shared_buffers;
 Узнать количество грязных буферов в буферном кэше:
 ```sql
 SELECT count(*)
-FROM pg_buffercache b
+FROM pg_buffercache
 WHERE isdirty;
 ```
 
