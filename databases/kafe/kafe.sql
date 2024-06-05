@@ -5,14 +5,26 @@ CREATE DATABASE kafe;
 
 \connect kafe
 
-DROP SCHEMA IF EXISTS kafe_v1 CASCADE;
-CREATE SCHEMA kafe_v1;
+DROP SCHEMA IF EXISTS main CASCADE;
+CREATE SCHEMA main;
+
+
+--
+-- МОДЕЛИ ДАННЫХ
+--
+
+
+--
+-- Валидация номера телефона
+--
+CREATE DOMAIN main.phone_number AS VARCHAR(11) 
+    CHECK(VALUE LIKE '79%');
 
 
 --
 -- Адреса заказчиков
 --
-CREATE TABLE kafe_v1.addresses
+CREATE TABLE main.addresses
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     street VARCHAR(128) NOT NULL,
@@ -24,46 +36,51 @@ CREATE TABLE kafe_v1.addresses
 
 
 --
+-- Скидки
+--
+CREATE TABLE main.discounts
+(
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(128) NOT NULL,
+    discount SMALLINT NOT NULL
+);
+
+INSERT INTO main.discounts(title, discount)
+VALUES('Скидка постоянного гостя', 15),
+('Золотая карта', 20);
+
+
+--
 -- Заказчики
 --
-CREATE TABLE kafe_v1.customers
+CREATE TABLE main.customers
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(128),
-    phone VARCHAR(11) UNIQUE NOT NULL,
-    discount BOOLEAN DEFAULT FALSE
+    phone main.phone_number UNIQUE NOT NULL,
+    FK_discount_id INT REFERENCES main.discounts(id)
 );
 
 
 --
--- Many to Many addresses и customers
+-- Many to Many addresses <=> customers
 -- Адреса заказчиков
 --
-CREATE TABLE kafe_v1.addresses_customers
+CREATE TABLE main.addresses_customers
 (
     addresses_customers_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    fk_customer_id INT REFERENCES kafe_v1.customers(id),
-    fk_address_id INT REFERENCES kafe_v1.addresses(id)
-);
-
-
---
--- Официанты
---
-CREATE TABLE kafe_v1.waiters
-(
-    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL
+    fk_customer_id INT REFERENCES main.customers(id),
+    fk_address_id INT REFERENCES main.addresses(id)
 );
 
 
 --
 -- Заказы
 --
-CREATE TABLE kafe_v1.orders
+CREATE TABLE main.orders
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    status VARCHAR(10) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    status VARCHAR(8) CHECK (status IN ('ACCEPTED', 'CLOSED', 'CANCELED')) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ,
     comment VARCHAR(50)
@@ -71,79 +88,91 @@ CREATE TABLE kafe_v1.orders
 
 
 --
+-- Many to Many orders <=> customers
 -- Заказы (доставка)
 --
-CREATE TABLE kafe_v1.orders_delivery
+CREATE TABLE main.orders_delivery
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    fk_customer_id INT REFERENCES kafe_v1.customers(id),
-    fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    fk_customer_id INT REFERENCES main.customers(id),
+    fk_order_id UUID REFERENCES main.orders(id)
 );
 
-CREATE INDEX idx_customer_orders_delivery ON kafe_v1.orders_delivery(fk_customer_id);
-CREATE INDEX idx_order_orders_delivery ON kafe_v1.orders_delivery(fk_order_id);
+
+--
+-- Официанты
+--
+CREATE TABLE main.waiters
+(
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(100) NOT NULL
+);
+
+INSERT INTO main.waiters(name) VALUES('Борщева Е.'),
+('Онуфриенко И.'), ('Картаполова Т.'), ('Расмус К.'), ('Воронцовская В.');
 
 
 --
 -- Заказы (зал)
 --
-CREATE TABLE kafe_v1.orders_hall
+CREATE TABLE main.orders_hall
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    table_number SMALLINT,
-    fk_order_id BIGINT REFERENCES kafe_v1.orders(id),
-    fk_waiter_id SMALLINT REFERENCES kafe_v1.waiters(id),
-
-    CONSTRAINT table_number_range CHECK (table_number >= 1 AND table_number <= 32)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    desk SMALLINT CHECK (desk >= 1 AND desk <= 32),
+    fk_order_id UUID REFERENCES main.orders(id),
+    fk_waiter_id SMALLINT REFERENCES main.waiters(id)
 );
-
-CREATE INDEX idx_order_orders_hall ON kafe_v1.orders_hall(fk_order_id);
 
 
 --
 -- Заказы (самовывоз)
 --
-CREATE TABLE kafe_v1.orders_take_out
+CREATE TABLE main.orders_take_out
 (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    phone VARCHAR(11) UNIQUE NOT NULL,
-    fk_order_id BIGINT REFERENCES kafe_v1.orders(id)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone main.phone_number UNIQUE NOT NULL,
+    fk_order_id UUID REFERENCES main.orders(id)
 );
-
-CREATE INDEX idx_order_orders_take_out ON kafe_v1.orders_take_out(fk_order_id);
 
 
 --
 -- Категории блюд
 --
-CREATE TABLE kafe_v1.categories
+CREATE TABLE main.categories
 (
-    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id SMALLINT PRIMARY KEY,
     title VARCHAR(32) NOT NULL
 );
 
+INSERT INTO main.categories(id, title) VALUES(1, 'Десерты'), 
+(2, 'Горячие блюда'), (3, 'Салаты'), (4, 'Японская кухня'), (5, 'Напитки'),
+(6, 'Пиццы'), (7, 'Супы');
+
 
 --
--- Блюда
+-- Позиции меню
 --
-CREATE TABLE kafe_v1.dishes
+CREATE TABLE main.dishes
 (
     id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(128) UNIQUE NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
-    fk_category_id SMALLINT REFERENCES kafe_v1.categories(id)
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ,
+    fk_category_id SMALLINT REFERENCES main.categories(id)
 );
 
 
 --
--- Many to Many orders и dishes
+-- Many to Many orders <=> dishes
 -- Блюда в заказе
 --
-CREATE TABLE kafe_v1.orders_dishes
+CREATE TABLE main.orders_dishes
 (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     amount SMALLINT DEFAULT 1,
-    fk_order_id BIGINT REFERENCES kafe_v1.orders(id),
-    fk_dish_id SMALLINT REFERENCES kafe_v1.dishes(id)
+    fk_order_id UUID REFERENCES main.orders(id),
+    fk_dish_id SMALLINT REFERENCES main.dishes(id)
 );
