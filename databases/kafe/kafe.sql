@@ -17,7 +17,7 @@ CREATE SCHEMA main;
 --
 -- Валидация номера телефона
 --
-CREATE DOMAIN main.phone_number AS VARCHAR(11) 
+CREATE DOMAIN main.valid_phone_number AS VARCHAR(11) 
     CHECK(VALUE LIKE '79%');
 
 
@@ -46,7 +46,8 @@ CREATE TABLE main.discounts
 );
 
 INSERT INTO main.discounts(title, discount)
-VALUES('Скидка постоянного гостя', 15),
+VALUES ('Нет скидки', 0)
+('Скидка постоянного гостя', 15),
 ('Золотая карта', 20);
 
 
@@ -57,8 +58,8 @@ CREATE TABLE main.customers
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(128),
-    phone main.phone_number UNIQUE NOT NULL,
-    FK_discount_id INT REFERENCES main.discounts(id)
+    phone main.valid_phone_number UNIQUE NOT NULL,
+    fk_discount_id INT REFERENCES main.discounts(id)
 );
 
 
@@ -130,7 +131,7 @@ CREATE TABLE main.orders_hall
 CREATE TABLE main.orders_take_out
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    phone main.phone_number UNIQUE NOT NULL,
+    phone main.valid_phone_number UNIQUE NOT NULL,
     fk_order_id UUID REFERENCES main.orders(id)
 );
 
@@ -176,3 +177,108 @@ CREATE TABLE main.orders_dishes
     fk_order_id UUID REFERENCES main.orders(id),
     fk_dish_id SMALLINT REFERENCES main.dishes(id)
 );
+
+
+--
+-- ХРАНИМЫЕ ПРОЦЕДУРЫ
+--
+
+--
+-- Добавление данных нового заказчика
+--
+CREATE OR REPLACE PROCEDURE main.add_customer(
+    input_name VARCHAR(128), 
+    input_phone main.phone_number,
+    input_discont INT
+    ) AS $$
+    INSERT INTO main.customers(name, phone, discont)
+    VALUES(input_name, input_phone, input_discont);
+$$ LANGUAGE sql;
+
+
+--
+-- Добавление нового адреса
+--
+CREATE OR REPLACE PROCEDURE main.add_address(
+    input_street VARCHAR(128), 
+    input_house SMALLINT,
+    input_apartment SMALLINT,
+    input_entrance SMALLINT,
+    input_floor SMALLINT
+    ) AS $$
+    INSERT INTO main.add_address(street, house, apartment, entrance, floor)
+    VALUES(input_street, input_house, input_apartment, input_entrance, input_floor);
+$$ LANGUAGE sql;
+
+
+--
+-- Привязка адреса к заказчику
+--
+CREATE OR REPLACE PROCEDURE main.rel_customer_address(
+    input_customer_id INT, 
+    input_address_id INT,
+    ) AS $$
+    INSERT INTO main.addresses_customers(fk_customer_id, fk_address_id)
+    VALUES(input_customer_id, input_address_id);
+$$ LANGUAGE sql;
+
+
+--
+-- Создание заказа на доставку
+--
+CREATE OR REPLACE PROCEDURE main.create_order_delivery(
+    input_dish_id INT,
+    input_amount_dish INT,
+    input_status VARCHAR(8), 
+    input_comment VARCHAR(50),
+    input_customer_id INT
+    ) AS $$
+    INSERT INTO main.orders(status, comment)
+    VALUES(input_status, input_comment)
+    RETURNING id INTO new_order_id;
+    INSERT INTO main.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(input_amount_dish, new_order_id, input_dish_id);
+    INSERT INTO main.orders_delivery(fk_customer_id, fk_order_id)
+    VALUES(input_customer_id, new_order_id);
+$$ LANGUAGE sql;
+
+
+--
+-- Создание заказа на самовывоз
+--
+CREATE OR REPLACE PROCEDURE main.create_order_take_out(
+    input_dish_id INT,
+    input_amount_dish INT,
+    input_status VARCHAR(8), 
+    input_comment VARCHAR(50),
+    input_desk SMALLINT,
+    input_waiter
+    ) AS $$
+    INSERT INTO main.orders(status, comment)
+    VALUES(input_status, input_comment)
+    RETURNING id INTO new_order_id;
+    INSERT INTO main.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(input_amount_dish, new_order_id, input_dish_id);
+    INSERT INTO main.orders_take_out(desk, fk_order_id)
+    VALUES(input_phone, new_order_id);
+$$ LANGUAGE sql;
+
+
+--
+-- Создание заказа в зале
+--
+CREATE OR REPLACE PROCEDURE main.create_order_hall(
+    input_dish_id INT,
+    input_amount_dish INT,
+    input_status VARCHAR(8), 
+    input_comment VARCHAR(50),
+    input_waiter_id INT
+    ) AS $$
+    INSERT INTO main.orders(status, comment)
+    VALUES(input_status, input_comment)
+    RETURNING id INTO new_order_id;
+    INSERT INTO main.orders_dishes(amount, fk_order_id, fk_dish_id)
+    VALUES(input_amount_dish, new_order_id, input_dish_id);
+    INSERT INTO main.orders_hall(desk, fk_order_id, fk_waiter_id)
+    VALUES(input_desk, new_order_id, input_waiter_id);
+$$ LANGUAGE sql;
