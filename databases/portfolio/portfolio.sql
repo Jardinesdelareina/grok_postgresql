@@ -3,7 +3,7 @@
 DROP DATABASE IF EXISTS portfolio;
 CREATE DATABASE portfolio;
 
-\connect portfolio;
+\connect portfolio
 
 DROP SCHEMA qts CASCADE;
 DROP SCHEMA ms CASCADE;
