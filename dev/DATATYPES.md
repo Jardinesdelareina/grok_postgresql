@@ -98,6 +98,11 @@ SELECT * FROM xmltable(
 );
 ```
 
+Преобразование XML в строку символов:
+```sql
+SELECT xmlserialize(CONTENT xmldata AS TEXT) FROM xmldocs;
+```
+
 
 #### JSON
 
