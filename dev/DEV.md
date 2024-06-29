@@ -437,6 +437,9 @@ SELECT * FROM file_users;
 
 `sudo make install`
 
+```sql
+CREATE EXTENSION http;
+```
 
 Пример запроса:
 ```sql
