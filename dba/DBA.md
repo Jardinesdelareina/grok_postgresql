@@ -390,13 +390,17 @@ CREATE ROLE bob LOGIN;
 
 `GRANT ALL PRIVILEGES ON DATABASE your_database TO your_username;`      предоставление привелегий новому пользователю
 
-`GRANT CREATE, USAGE ON SCHEMA alice TO bob`    предоставление привелегий пользователю bob на создание и использование схем
+`GRANT CREATE, USAGE ON SCHEMA alice TO bob WITH GRANT OPTION`    предоставление привелегий пользователю bob на создание и использование схем с правом передачи
+
+`REVOKE ALL ON  table FROM bob CASCADE;`    отзыв всех привелегий на таблицу table у bob'а и других ролей в иерархии
 
 `ALTER ROLE your_username NOLOGIN;`     лишение пользователя возможности подключения в базе данных
 
 `GRANT alice TO postgres;`   включение alice в роль postgres
 
 `REVOKE alice TO postgres;`  исключение alice из роли postgres
+
+`ALTER FUNCTION function() SECURITY DEFINER;`   объявление функции как работающей с правами создавшей ее роли
 
 
 ##### Access priveleges
