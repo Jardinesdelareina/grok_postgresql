@@ -117,7 +117,6 @@ SELECT * FROM pg_stat_replication \gx
 CREATE PUBLICATION test_publication FOR TABLE test_table;
 ```
 
-
 Создание подписки на таблицу 
 ```sql
 CREATE SUBSCRIPTION test_subscription
