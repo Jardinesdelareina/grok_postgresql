@@ -40,6 +40,7 @@ SELECT type, user_name, address, auth_method FROM pg_hba_file_rules
 WHERE database = ARRAY['replication'];
 ```
 
+
 Далее нужно создать директорию для нового кластера
 `sudo mkdir /var/lib/postgresql/14/replica`
 
@@ -59,23 +60,18 @@ WHERE database = ARRAY['replication'];
 Создание резервной копии кластера (-R сформирует необходимые для репликации конфигурационные параметры). Ключ -R создаст указание серверу перейти в режим постоянного восстановления, а также поместит в файл postgresql.auto.conf настройки для подключения к основному серверу
 `pg_basebackup --pgdata=/var/lib/postgresql/14/replica/* -R`
 
-
 Предоставление пользователю роли REPLICATION
 ```sql
 ALTER ROLE user_name REPLICATION;
 
-
 Назначение postgres владельцем файлов каталога кластера
 `sudo chown -R postgres:postgres /var/lib/postgresql/14/replica`
-
 
 Проверка, что необходимый кластер, куда будет создана реплика, остановлен (down)
 `sudo pg_lsclusters`
 
-
 Запустить новый кластер и остановить его, если сервер работает
-`sudo pg_ctlcluster 12 replica start`
-
+`sudo pg_ctlcluster 14 replica start`
 
 Посмотреть состояние реприкации
 ```sql
@@ -110,7 +106,6 @@ SELECT * FROM pg_stat_replication \gx
 
 Включение логической репликации
 `ALTER SYSTEM SET wal_level = logical;`
-
 
 Создание публикации с привязкой на реплицируемую таблицу
 ```sql
