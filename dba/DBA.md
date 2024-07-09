@@ -781,13 +781,6 @@ FROM pg_hba_file_rules;
 либо из под пользователя linux:
 `sudo egrep '^[^#]' /etc/postgresql/14/main/pg_hba.conf`
 
-
-##### Редактирование pg_hba.conf пользователем linux
-`sudo tee /etc/postgresql/14/main/pg_hba.conf << EOF
-local all postgres trust
-EOF
-`
-
 ##### Вывод информации о процессе по его pid
 ```sql
 SELECT query, backend_type, wait_event_type, wait_event
@@ -810,4 +803,12 @@ SELECT pg_reload_conf();
 Пароли хранятся как значение хеш-функции, не допускающее расшифровки. Сервер всегда сравнивает между собой зашифрованные значения — введенный пароль и значение из pg_authid.
 ```sql
 SELECT rolname, rolpassword FROM pg_authid;
+```
+
+##### Поиск таблиц к базе данных, содержащих определенную колонку
+```sql
+SELECT table_schema, table_name
+FROM information_schema.columns
+WHERE column_name = '<название таблицы>'
+ORDER BY table_schema, table_name;
 ```
