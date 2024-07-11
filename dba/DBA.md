@@ -744,7 +744,7 @@ COPY employees TO employees_copy;
 
 -------------------------------------------------------------------------------------------------------
 
-### Полезные функции PostgreSQL
+### Полезные команды PostgreSQL
 
 ##### Вывод размера (базы данных, табличных пространств)
 ```sql
@@ -780,6 +780,9 @@ FROM pg_hba_file_rules;
 
 либо из под пользователя linux:
 `sudo egrep '^[^#]' /etc/postgresql/14/main/pg_hba.conf`
+
+##### Открытие файла pg_hba.conf в ОС
+`sudo nano /etc/postgresql/14/main/pg_hba.conf`
 
 ##### Вывод информации о процессе по его pid
 ```sql
