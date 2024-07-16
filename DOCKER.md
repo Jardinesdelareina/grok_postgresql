@@ -52,3 +52,68 @@ sudo apt-get update
 sudo apt-get update
 sudo apt-get install ./docker-desktop-amd64.deb
 ```
+
+
+### Установка и настройка PostgreSQL в Docker
+
+`sudo apt-cache depends postgresql-14`  просмотр зависимостей PostgreSQL
+
+`sudo systemctl status docker`  проверка статуса Docker в ОС
+
+`sudo systemctl start docker`   запуск процесса Docker
+
+`sudo systemctl stop docker`    остановка процесса Docker
+
+`sudo systemctl restart docker`   рестарт Docker
+
+`sudo systemctl enable docker`    включение автозапуска Docker в ОС
+
+`sudo systemctl disable docker`   отключение автозапуска Docker
+
+`sudo docker pull postgres`   получение из Docker Hub готового образа PostgreSQL
+
+За пределами жизненного цикла контейнера не остается каких-либо данных. Поэтому на файловой системе сервера необходимо создать каталог для хранения данных, которые будут появятся в процессе работы экземпляра PostgreSQL: `mkdir -p $HOME/docker/volumes/postgres`
+
+`sudo docker run --rm --name fueros_pg -e POSTGRES_PASSWORD=fueros -e POSTGRES_USER=fueros -e POSTGRES_DB=fueros USERMAP_UID=999 -e USERMAP_GID=999 -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data postgres`   запуск контейнера PostgreSQL
+* <b>--rm</b> организовывает автоматическое удаление файловой системы контейнера после его остановки
+* <b>--name</b> устанавливает имя контейнера
+* <b>-e</b> задает переменные окружения
+* <b>-d</b> задает запуск контейнера в фоновом режиме
+* <b>-p</b> задает привязкку внутреннего порта сервера к порту контейнера
+* <b>-v</b> задает точку монтирования каталога данных на сервере к каталогу данных в контейнере
+
+<em>Команда запускает клиент psql в контейнере.</em>
+
+
+`sudo docker stop fueros_pg`    остановка контейнера fueros_pg
+
+
+### Docker-Compose
+
+`sudo apt install docker-compose`   установить docker-compose
+
+Создается файл `docker-compose.yml` следующего содержания:
+
+```
+version: '3.1'
+
+volumes:
+  pg_fueros:
+
+services:
+  fueros:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=fueros
+      - POSTGRES_USER=fueros
+      - POSTGRES_DB=fueros
+    volumes:
+      - pg_project:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+```
+
+`sudo docker-compose up -d`   запуск контейнера
+
+`sudo docker-compose stop`    остановка контейнера
