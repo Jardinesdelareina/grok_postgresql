@@ -1,9 +1,0 @@
- schemaname |   tablename   | tableowner 
-------------+---------------+------------
- public     | tab           | postgres
- pg_catalog | pg_statistic  | postgres
- pg_catalog | pg_type       | postgres
- ms         | currencies    | postgres
- qts        | deals_xrpusdt | postgres
-(5 rows)
-
