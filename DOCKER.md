@@ -74,7 +74,7 @@ sudo apt-get install ./docker-desktop-amd64.deb
 
 За пределами жизненного цикла контейнера не остается каких-либо данных. Поэтому на файловой системе сервера необходимо создать каталог для хранения данных, которые будут появятся в процессе работы экземпляра PostgreSQL: `mkdir -p $HOME/docker/volumes/postgres`
 
-`sudo docker run --rm --name fueros_pg -e POSTGRES_PASSWORD=fueros -e POSTGRES_USER=fueros -e POSTGRES_DB=fueros USERMAP_UID=999 -e USERMAP_GID=999 -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data postgres`   запуск контейнера PostgreSQL
+`sudo docker run --rm --name fueros_pg -e POSTGRES_PASSWORD=fueros -e POSTGRES_USER=fueros -e POSTGRES_DB=fueros -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data postgres`   запуск контейнера PostgreSQL
 * <b>--rm</b> организовывает автоматическое удаление файловой системы контейнера после его остановки
 * <b>--name</b> устанавливает имя контейнера
 * <b>-e</b> задает переменные окружения
@@ -88,7 +88,30 @@ sudo apt-get install ./docker-desktop-amd64.deb
 `sudo docker stop fueros_pg`    остановка контейнера fueros_pg
 
 
-### Docker-Compose
+### Команды Docker
+
+<em>Команды применяются вместе с `sudo docker`</em>
+
+`pull <образ>`  забрать образ из Docker Hub
+
+`run`   создать контейнер
+* `--name`  задать имя контейнеру
+* `-d`  detached mode (открепить терминал от контейнера, фоновый режим)
+
+`ps`  вывести список запущенных контейнеров (`-a` дает расширенную информацию)
+
+`rm <id контейнера>`  удалить контейнер  
+
+`rmi <id образа>`   удалить образ
+
+`stop`  остановить контейнер
+
+`images`  вывести список доступных локально образов
+
+`search <образ>`  искать доступные в сети образы
+
+
+### Docker Compose
 
 `sudo apt install docker-compose`   установить docker-compose
 
@@ -114,6 +137,8 @@ services:
       - ${POSTGRES_PORT:-5432}:5432
 ```
 
-`sudo docker-compose up -d`   запуск контейнера
+`sudo docker compose up -d`   запуск контейнера в фоновом режиме
 
-`sudo docker-compose stop`    остановка контейнера
+`sudo docker compose up --build`   сборка контейнера из образа и его запуск
+
+`sudo docker compose stop`    остановка контейнера
