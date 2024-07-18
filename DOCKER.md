@@ -142,3 +142,5 @@ services:
 `sudo docker compose up --build`   сборка контейнера из образа и его запуск
 
 `sudo docker compose stop`    остановка контейнера
+
+`sudo docker-compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними

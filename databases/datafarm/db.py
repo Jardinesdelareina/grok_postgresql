@@ -4,10 +4,10 @@ import psycopg2
 env = environs.Env()
 env.read_env('.env')
 
-DB_USER = env('DB_USER')
-DB_PASS = env('DB_PASS')
-DB_HOST = env('DB_HOST')
-DB_NAME = env('DB_NAME')
+DB_USER = env('POSTGRES_USER')
+DB_PASS = env('POSTGRES_PASSWORD')
+DB_HOST = env('POSTGRES_HOST')
+DB_NAME = env('POSTGRES_DB')
 
 try:
     connection = psycopg2.connect(
