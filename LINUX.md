@@ -119,6 +119,8 @@
 
 `sudo apt update && sudo apt full-upgrade -y && sudo apt autoclean && sudo apt autoremove -y`   обновление пакетов до актуальных версий, очистка кэша и локального хранилища, удаление не используемых зависимостей
 
+`pip3 list --format freeze | awk -F = {'print $1'} | xargs pip3 show | grep -E 'Location:|Name:' | cut -d ' ' -f 2 | paste -d ' ' - - | awk '{print $2 "/" tolower($1)}' | xargs du -sh 2> /dev/null | sort -h`     получение списка python-пакетов, отсортиррованных по размеру с указанием адресов
+
 
 ##### Другие полезные команды
 
