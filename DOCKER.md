@@ -118,8 +118,6 @@ sudo apt-get install ./docker-desktop-amd64.deb
 Создается файл `docker-compose.yml` следующего содержания:
 
 ```
-version: '3.1'
-
 volumes:
   pg_fueros:
 
@@ -139,7 +137,7 @@ services:
 
 `sudo docker compose up -d`   запуск контейнера в фоновом режиме
 
-`sudo docker compose up --build`   сборка контейнера из образа и его запуск
+`sudo docker compose up --build`   сборка контейнера из образа и его запуск (--force-recreate пересоздание образа после остановки контейнера)
 
 `sudo docker compose stop`    остановка контейнера
 
