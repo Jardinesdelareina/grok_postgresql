@@ -826,3 +826,26 @@ Time: 7654,217 ms (00:07,654)
 * Разумное ограничение целостности данных (установка constraints)
 * Материализация CTE и VIEW
 * Изменение структуры запроса (разные решения могут иметь разную производительность)
+
+
+### Поиск и исправление длительного запроса
+
+1. Просмотреть ТОП-5 самых длительных запросов в системе:
+```sql
+SELECT query, calls, total_exec_time, rows
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 5;
+```
+
+2. Проанализировать `EXPLAIN ANALYZE` на предмет наличия последовательного сканиования;
+
+ТОП-5 таблиц, по которым проходило последовательное сканирование:
+```sql
+SELECT schemaname, relname, seq_scan, seq_tup_read, seq_tup_read / seq_scan as avg_seq_tup_read
+FROM pg_stat_all_tables
+WHERE seq_scan > 0
+ORDER BY 5 DESC LIMIT 5;
+```
+
+3. добавить индексы.

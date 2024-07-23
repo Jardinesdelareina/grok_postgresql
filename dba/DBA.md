@@ -546,6 +546,13 @@ SELECT pg_reload_conf();
 
 <b>Выполнение всех описанных выше периодических задач обслуживания берет на себя фоновый процесс автоочистки (autovacuum).</b> 
 
+Очистки требуют объекты, в которых накопилось значительное количество ненужных ("мертвых") версий строк. Очищаются также объекты, в которые с момента прошлой очистки было вставлено значительное количество новых строк. Это важно для таблиц, в которые данные только вставляются: их тоже необходимо очищать, чтобы обновить карту видимости и заморозить старые версии.
+
+В случае необходимости можно настроить параметры очистки на уровне отдельных таблиц с помощью параметров хранения: 
+```sql
+CREATE TABLE ... WITH (параметр=значение);
+```
+
 В системе постоянно присутствует процесс `autovacuum launcher`, который планирует работу очистки и запускает необходимое число рабочих процессов `autovacuum worker`, работающих параллельно. Очистка работает постранично, не приводя к блокировкам других транзакций, хотя и создает нагрузку на подсистему ввода-вывода.
 
 Автоматическая очистка перестанет работать при отключении любого из двух параметров `autovacuum` или `track_counts`. Может ошибочно показаться, что отключение способно увеличить производительность системы за счет исключения "лишних" операций ввода-вывода. На самом деле отказ от очистки влечет за собой последствия: неконтролируемое разрастание файлов, замедление запросов и риск аварийной остановки сервера. В конечном итоге это приведет к полному параличу системы.
@@ -569,6 +576,58 @@ SELECT pid, backend_start, backend_type
 FROM pg_stat_activity
 WHERE backend_type = 'autovacuum launcher';
 ```
+
+Представление, показывающее, нужна ли таблице очистка:
+```sql
+CREATE VIEW needed_vacuum AS
+WITH params AS (
+  SELECT (SELECT setting::INT
+          FROM   pg_settings
+          WHERE  name = 'autovacuum_vacuum_threshold') AS vacuum_threshold,
+         (SELECT setting::FLOAT
+          FROM   pg_settings
+          WHERE  name = 'autovacuum_vacuum_scale_factor') AS vacuum_scale_factor
+)
+SELECT st.relname,
+       st.n_dead_tup dead_tup,
+       (p.vacuum_threshold + p.vacuum_scale_factor*c.reltuples)::INT max_dead_tup,
+       st.n_dead_tup > (p.vacuum_threshold + p.vacuum_scale_factor*c.reltuples)::INT need_vacuum,
+       st.last_autovacuum
+FROM   pg_stat_all_tables st,
+       pg_class c,
+       params p
+WHERE  c.oid = st.relid
+AND    c.relname = '<таблица>';
+```
+
+Аналогичное представление на определение необходимости анализа:
+```sql
+CREATE VIEW needed_analyze AS
+WITH params AS (
+  SELECT (SELECT setting::INT
+          FROM   pg_settings
+          WHERE  name = 'autovacuum_analyze_threshold') as analyze_threshold,
+         (SELECT setting::FLOAT
+          FROM   pg_settings
+          WHERE  name = 'autovacuum_analyze_scale_factor') as analyze_scale_factor
+)
+SELECT st.relname,
+       st.n_mod_since_analyze mod_tup,
+       (p.analyze_threshold + p.analyze_scale_factor*c.reltuples)::INT max_mod_tup,
+       st.n_mod_since_analyze > (p.analyze_threshold + p.analyze_scale_factor*c.reltuples)::INT need_analyze,
+       st.last_autoanalyze
+FROM   pg_stat_all_tables st,
+       pg_class c,
+       params p
+WHERE  c.oid = st.relid
+AND    c.relname = '<таблица>';
+```
+
+Основные параметры настройки автоочистки:
+* `autovacuum_vacuum_scale_factor` — частота обработки
+* `autovacuum_max_workers` — параллелизм
+* `autovacuum_vacuum_cost_limit` — скорость работы
+
 
 
 ### Табличные пространства
