@@ -118,26 +118,29 @@ sudo apt-get install ./docker-desktop-amd64.deb
 Создается файл `docker-compose.yml` следующего содержания:
 
 ```
-volumes:
-  pg_fueros:
-
 services:
-  fueros:
-    image: postgres
+
+  db:
+    image: postgres:14
     restart: always
+    container_name: database
+    env_file:
+      - ./.env
     environment:
-      - POSTGRES_PASSWORD=fueros
-      - POSTGRES_USER=fueros
-      - POSTGRES_DB=fueros
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - pg_project:/var/lib/postgresql/data
-    ports:
-      - ${POSTGRES_PORT:-5432}:5432
+      - .:/docker-entrypoint-initdb.d
 ```
+
+В volumes должен находиться sql-файл, инициализирующий кластер PostgreSQL. Переменные окружения читаются из файла `.env`.
 
 `sudo docker compose up -d`   запуск контейнера в фоновом режиме
 
 `sudo docker compose up --build`   сборка контейнера из образа и его запуск (--force-recreate пересоздание образа после остановки контейнера)
+
+`sudo docker exec -it <ID контейнера> bash`   вход в терминал работающего контейнера
 
 `sudo docker compose stop`    остановка контейнера
 
