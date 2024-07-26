@@ -82,7 +82,7 @@ sudo apt-get install ./docker-desktop-amd64.deb
 * <b>-p</b> задает привязкку внутреннего порта сервера к порту контейнера
 * <b>-v</b> задает точку монтирования каталога данных на сервере к каталогу данных в контейнере
 
-`sudo docker exec -it <id контейнера> bash`   активация psql в контейнере
+`sudo docker exec -it <id/имя контейнера> bash`   активация psql в контейнере
 
 `sudo docker stop fueros_pg`    остановка контейнера fueros_pg
 
@@ -139,8 +139,6 @@ services:
 
 `sudo docker compose up --build`   сборка контейнера из образа и его запуск (--force-recreate пересоздание образа после остановки контейнера)
 
-`sudo docker exec -it <ID контейнера> bash`   вход в терминал работающего контейнера
+`sudo docker exec -it <ID/имя контейнера> bash`   вход в терминал работающего контейнера
 
-`sudo docker compose stop`    остановка контейнера
-
-`sudo docker-compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
+`sudo docke compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
