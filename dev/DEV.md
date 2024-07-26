@@ -448,6 +448,62 @@ FROM http_get('https://api.mexc.com/api/v3/time');
 ```
 
 
+### pg_cron
+
+Расширение `pg_cron` позволяет планировать выполнение SQL запросов в определенное время или с определенной периодичностью.
+
+[Репозиторий разработчика расширения](https://github.com/citusdata/pg_cron)
+
+Порядок установки:
+
+`https://github.com/citusdata/pg_cron`
+
+`cd pg_cron`
+
+`export PATH=/usr/pgsql-16/bin:$PATH`
+
+`make && sudo PATH=$PATH make install`
+
+В файл postgresql.conf:
+* назначить параметр shared_preload_libraries = 'pg_cron'
+* добавить строку `cron.database_name = 'postgres' (обозначить ту базу данных, где будет работать pg_cron)`
+
+<em>После корректировки файла postgresql.conf необходимо перезагрузить сервер `sudo service postgresql restart`.</em>
+
+<b>pg_cron</b> может быть установлен только в одну базу данных в кластере. Для запуска задания в нескольких базах данных подойдет `cron.schedule_in_database()`.
+
+```sql
+CREATE EXTENSION pg_cron;
+```
+
+Для работы pg_cron может потребоваться включить <b>trust</b> аутентификацию для соединений, поступающих с localhost в файле `pg_hba.conf`. 
+
+
+Просмотреть задания:
+```sql
+SELECT * FROM cron.job;
+```
+
+```sql
+SELECT cron.schedule('task_name', 'cron_expression', 'SQL_query');
+```
+'task_name' - название задания, 'cron_expression' - выражение для расписания выполнения, 'SQL_query' - SQL запрос, который нужно выполнить.
+
+Звездочки в выражении cron (* * * * *) означают следующее:
+* Первая звездочка: минуты (от 0 до 59)
+* Вторая звездочка: часы (от 0 до 23)
+* Третья звездочка: дни месяца (от 1 до 31)
+* Четвертая звездочка: месяцы (от 1 до 12)
+* Пятая звездочка: дни недели (от 0 до 7, где 0 и 7 - воскресенье)
+Таким образом, если установить выражение cron на * * * * *, то задание будет выполняться каждую минуту каждого часа каждого дня каждого месяца каждой недели.
+
+
+
+
+
+
+
+
 ### Функции PostgreSQL
 
 #### convert_from()
