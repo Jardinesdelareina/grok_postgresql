@@ -197,33 +197,43 @@ FROM pg_hba_file_rules;
 
 
 ### Открытие файла pg_hba.conf в ОС
+
 `sudo nano /etc/postgresql/14/main/pg_hba.conf`
 
+
 ### Вывод информации о процессе по его pid
+
 ```sql
 SELECT query, backend_type, wait_event_type, wait_event
 FROM pg_stat_activity WHERE pid = <номер процесса>;
 ```
 
+
 ### Вывод всех незакоментированных параметров конфигурации из файла postgresql.conf
+
 ```sql
 SELECT sourceline, name, setting, applied
 FROM pg_file_settings
-WHERE sourcefile LIKE '/etc/postgresql/13/main/postgresql.conf';
+WHERE sourcefile LIKE '/etc/postgresql/14/main/postgresql.conf';
 ```
 
+
 ### Перезагрузка файла конфигурации postgresql.conf без остановки сервера базы данных:
+
 ```sql
 SELECT pg_reload_conf();
 ```
 
+
 ### Просмотр паролей ролей в базе данных
+
 Пароли хранятся как значение хеш-функции, не допускающее расшифровки. Сервер всегда сравнивает между собой зашифрованные значения — введенный пароль и значение из pg_authid.
+
 ```sql
 SELECT rolname, rolpassword FROM pg_authid;
 ```
 
-### Поиск таблиц к базе данных, содержащих определенную колонку
+### Поиск таблиц в базе данных, содержащих определенную колонку
 ```sql
 SELECT table_schema, table_name
 FROM information_schema.columns
