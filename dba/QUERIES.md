@@ -95,6 +95,27 @@ SELECT pg_terminate_backend(PID_ID);
 <b>PID_ID</b> - это ID запроса, который блокирует другие запросы. Чаще всего хватает отмены одного блокирующего запроса, чтобы снять блокировки и запустить всю накопившуюся очередь. Разница между `pg_cancel_backend` и `pg_terminate_backend` в том, что `pg_cancel_backend` отменяет запрос, а `pg_terminate_backend` завершает сеанс и, соответственно, закрывает подключение к базе данных.
 
 
+### Доля кэшированных данных в таблицах
+
+Какая доля каких таблиц закеширована (и насколько активно используются эти данные).
+
+```sql
+SELECT c.relname,
+  count(*) blocks,
+  round( 100.0 * 8192 * count(*) / pg_table_size(c.oid) ) "% of rel",
+  round( 100.0 * 8192 * count(*) FILTER (WHERE b.usagecount > 3) / pg_table_size(c.oid) ) "% hot"
+FROM pg_buffercache b
+  JOIN pg_class c ON pg_relation_filenode(c.oid) = b.relfilenode
+WHERE  b.reldatabase IN (
+         0, (SELECT oid FROM pg_database WHERE datname = current_database())
+       )
+AND    b.usagecount is not null
+GROUP BY c.relname, c.oid
+ORDER BY 2 DESC
+LIMIT 10;
+```
+
+
 ### Коэффициент кэширования
 
 Показатель эффективности чтения, измеряемый долей операций чтения из кэша по сравнению с общим количеством операций чтения как с диска, так и из кэша. За исключением случаев использования хранилища данных, идеальный коэффициент кэширования составляет 99% или выше, что означает, что по крайней мере 99% операций чтения выполняются из кэша и не более 1% - с диска.
@@ -234,6 +255,7 @@ SELECT rolname, rolpassword FROM pg_authid;
 ```
 
 ### Поиск таблиц в базе данных, содержащих определенную колонку
+
 ```sql
 SELECT table_schema, table_name
 FROM information_schema.columns
