@@ -167,6 +167,9 @@
 
 ### Конфиурирование сервера PostgreSQL
 
+[Сервис автоматического конфигурирования PostgreSQL (open source)](https://www.pgconfig.org/)
+
+
 Вывод всех незакоментированных параметров конфигурации из файла `postgresql.conf`:
 ```sql
 SELECT sourceline, name, setting, applied

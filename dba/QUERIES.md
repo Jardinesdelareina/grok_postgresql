@@ -175,7 +175,7 @@ ORDER BY connections DESC;
 ```
 
 
-### Выполняющиеся запросы и их длиттельность
+### Выполняющиеся запросы и их длительность
 
 ```sql
 SELECT pid, age(clock_timestamp(), query_start), usename, query, state
@@ -262,4 +262,3 @@ FROM information_schema.columns
 WHERE column_name = '<название таблицы>'
 ORDER BY table_schema, table_name;
 ```
-
