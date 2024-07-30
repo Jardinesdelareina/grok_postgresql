@@ -141,4 +141,4 @@ services:
 
 `sudo docker exec -it <ID/имя контейнера> bash`   вход в терминал работающего контейнера
 
-`sudo docke compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
+`sudo docker compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
