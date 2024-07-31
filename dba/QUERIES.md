@@ -163,6 +163,39 @@ WHERE idx_scan = 0 and schemaname <> 'pg_toast' and  schemaname <> 'pg_catalog'
 ```
 
 
+### Статистика использования индекса
+
+```sql
+SELECT n_distinct, correlation, null_frac, most_common_vals, most_common_freqs FROM pg_stats 
+WHERE tablename = '<название таблицы>' AND attname = '<название индексируемой колонки>'
+```
+
+n_distinct - уникальность значений, 
+correlation - упорядоченность значений, 
+null_frac - объемы NULL-значений, 
+most_common_vals и most_common_freqs - частые значения.
+
+
+### Соотношение размера таблиц и размера индексов в этих таблицах
+
+```sql
+SELECT 
+    tables.table_schema AS schema_name,
+    tables.table_name AS table_name,
+    pg_size_pretty(pg_total_relation_size(tables.table_schema || '.' || tables.table_name)) AS table_size,
+    pg_size_pretty(pg_indexes_size(tables.table_schema || '.' || tables.table_name)) AS index_size
+FROM 
+    information_schema.tables AS tables
+LEFT JOIN 
+    pg_stat_user_tables AS statTables ON tables.table_schema = statTables.schemaname 
+    AND tables.table_name = statTables.relname
+WHERE 
+    tables.table_schema NOT IN ('public', 'pg_catalog', 'information_schema')
+ORDER BY 
+    table_size DESC;
+```
+
+
 ### Количество открытых подключений
 
 ```sql
@@ -185,28 +218,28 @@ ORDER BY query_start desc;
 ```
 
 
-### Вывод размера объекта базы данных (таблица, индекс и т.д.)
+### Размер объекта базы данных (таблица, индекс и т.д.)
 
 ```sql
-SELECT pg_size_pretty(pg_total_relation_size('<название_объекта>')) AS object_size;
+SELECT pg_size_pretty(pg_total_relation_size('<название объекта>')) AS object_size;
 ```
 
 
-### Вывод информации о параметрах конкретной базы данных
+### Информация о параметрах конкретной базы данных
 
 ```sql
-SELECT * FROM pg_database WHERE datname = '<название_базы_данных>';
+SELECT * FROM pg_database WHERE datname = '<название базы данных>';
 ```
 
 
-### Вывод пути файла
+### Путь файла
 
 ```sql
 SELECT pg_relation_filepath('<название файла>');
 ```
 
 
-### Вывод информации из файла pg_hba.conf в виде таблицы
+### Информация из файла pg_hba.conf в виде таблицы
 
 ```sql
 SELECT line_number, type, database, user_name, address, auth_method
@@ -222,7 +255,7 @@ FROM pg_hba_file_rules;
 `sudo nano /etc/postgresql/14/main/pg_hba.conf`
 
 
-### Вывод информации о процессе по его pid
+### Информация о процессе по его pid
 
 ```sql
 SELECT query, backend_type, wait_event_type, wait_event
@@ -230,7 +263,7 @@ FROM pg_stat_activity WHERE pid = <номер процесса>;
 ```
 
 
-### Вывод всех незакоментированных параметров конфигурации из файла postgresql.conf
+### Все незакоментированные параметры конфигурации из файла postgresql.conf
 
 ```sql
 SELECT sourceline, name, setting, applied
@@ -246,7 +279,7 @@ SELECT pg_reload_conf();
 ```
 
 
-### Просмотр паролей ролей в базе данных
+### Пароли ролей в базе данных
 
 Пароли хранятся как значение хеш-функции, не допускающее расшифровки. Сервер всегда сравнивает между собой зашифрованные значения — введенный пароль и значение из pg_authid.
 
@@ -254,7 +287,7 @@ SELECT pg_reload_conf();
 SELECT rolname, rolpassword FROM pg_authid;
 ```
 
-### Поиск таблиц в базе данных, содержащих определенную колонку
+### Таблицы в базе данных, содержащих определенную колонку
 
 ```sql
 SELECT table_schema, table_name
