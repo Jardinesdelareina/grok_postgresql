@@ -5,11 +5,15 @@ CREATE DATABASE datafarm;
 
 \connect datafarm
 
+
 CREATE SCHEMA market;
 CREATE SCHEMA profile;
 CREATE SCHEMA trading;
+CREATE SCHEMA service;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA profile;
+SET search_path TO market, profile, trading, service, public;
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA service;
 
 
 --
@@ -41,7 +45,7 @@ CREATE DOMAIN profile.valid_email AS VARCHAR(128)
 -- Пользователи
 CREATE TABLE profile.users
 (
-    email profile.valid_email PRIMARY KEY,
+    email TEXT PRIMARY KEY,
     password VARCHAR(100) NOT NULL
 );
 
@@ -50,19 +54,8 @@ CREATE TABLE profile.users
 CREATE TABLE profile.portfolios
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(128) UNIQUE NOT NULL,
+    title VARCHAR(128) NOT NULL,
     fk_user_email profile.valid_email REFERENCES profile.users(email)
-);
-
-
--- Торговые стратегии
-CREATE TABLE trading.bots
-(
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_active BOOLEAN DEFAULT FALSE,
-    params JSONB NOT NULL
 );
 
 
@@ -74,9 +67,70 @@ CREATE TABLE trading.transactions
     quantity NUMERIC NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     fk_portfolio_id INT REFERENCES profile.portfolios(id),
-    fk_currency_symbol VARCHAR(20) REFERENCES market.currencies(symbol),
-    fk_bot_id INT REFERENCES trading.bots(id)
+    fk_currency_symbol VARCHAR(20) REFERENCES market.currencies(symbol)
 );
+
+
+--
+-- SERVICE
+--
+
+
+-- Генерация случайного целочисленного значения
+CREATE OR REPLACE FUNCTION service.generate_num(limit_num BIGINT) RETURNS INT AS $$
+    SELECT floor(random() * limit_num) + 1;
+$$ LANGUAGE sql;
+
+
+-- Определение количества знаков после запятой в десятичном числе
+CREATE OR REPLACE FUNCTION service.count_after_comma(num NUMERIC)
+RETURNS INTEGER AS $$
+DECLARE
+    num_str TEXT := num::TEXT;
+    num_len INT := LENGTH(num_str);
+    comma_pos INT := POSITION('.' IN num_str);
+BEGIN
+RETURN num_len - comma_pos;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Обфускация email-адресов
+CREATE OR REPLACE FUNCTION service.obfuscate_email(email profile.valid_email)
+RETURNS TEXT AS $$
+DECLARE
+    obfuscated_email TEXT := '';
+    char_code INT;
+    char_item VARCHAR;
+BEGIN
+    FOR char_item IN SELECT regexp_split_to_table(email, '') LOOP
+        char_code := ascii(char_item);
+        obfuscated_email := obfuscated_email || '&#' || char_code || ';';
+    END LOOP;
+    RETURN obfuscated_email;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Деобфускация email-адресов
+CREATE OR REPLACE FUNCTION service.deobfuscate_email(obfuscated_email TEXT)
+RETURNS profile.valid_email AS $$
+DECLARE
+    deobfuscated_email TEXT := '';
+    parts TEXT[];
+    item TEXT;
+    char_code INT;
+BEGIN
+    parts := string_to_array(obfuscated_email, '&#');
+    FOREACH item IN ARRAY parts LOOP
+        IF item <> '' THEN
+            char_code := CAST(SPLIT_PART(item, ';', 1) AS INT);
+            deobfuscated_email := deobfuscated_email || chr(char_code);
+        END IF;
+    END LOOP;
+    RETURN deobfuscated_email;
+END;
+$$ LANGUAGE plpgsql;
 
 
 --
@@ -90,7 +144,7 @@ CREATE OR REPLACE PROCEDURE profile.create_user(
     input_password VARCHAR(100)
     ) AS $$
     INSERT INTO profile.users(email, password)
-    VALUES(input_email, profile.crypt(input_password, profile.gen_salt('md5')));
+    VALUES(service.obfuscate_email(input_email), service.crypt(input_password, service.gen_salt('md5')));
 $$ LANGUAGE sql;
 
 
@@ -104,59 +158,15 @@ CREATE OR REPLACE PROCEDURE profile.create_portfolio(
 $$ LANGUAGE sql;
 
 
--- Изменение параметров портфеля
-CREATE OR REPLACE PROCEDURE profile.update_portfolio(
-    input_portfolio_id INT,
-    input_portfolio_title VARCHAR(200)
-    ) AS $$
-    UPDATE profile.portfolios
-    SET title = input_portfolio_title
-    WHERE id = input_portfolio_id;
-$$ LANGUAGE sql;
-
-
--- Создание стратегии
-CREATE OR REPLACE PROCEDURE trading.create_bot(
-    input_title VARCHAR(100),
-    input_description TEXT,
-    input_params JSONB
-    ) AS $$
-    INSERT INTO trading.bots(title, description, params)
-    VALUES(input_title, input_description, input_params);
-$$ LANGUAGE sql;
-
-
--- Изменение стратегии
-CREATE OR REPLACE PROCEDURE trading.update_bot(
-    input_bot_id INT,
-    input_title_bot VARCHAR(100),
-    input_description_bot TEXT,
-    input_params_bot JSONB
-    ) AS $$
-    UPDATE trading.bots
-    SET title = input_title_bot, description = input_description_bot, params = input_params_bot
-    WHERE id = input_bot_id;
-$$ LANGUAGE sql;
-
-
 -- Создание транзакции
 CREATE OR REPLACE PROCEDURE trading.create_transaction(
     input_action_type VARCHAR(4),
     input_quantity NUMERIC,
     input_portfolio_id INT,
-    input_currency_symbol VARCHAR(20),
-    input_bot_id INT
+    input_currency_symbol VARCHAR(20)
     ) AS $$
-    INSERT INTO trading.transactions(action_type, quantity, fk_portfolio_id, fk_currency_symbol, fk_bot_id)
-    VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_symbol, input_bot_id);
-$$ LANGUAGE sql;
-
-
--- Отключение стратегии
-CREATE OR REPLACE PROCEDURE trading.set_off(input_bot_title VARCHAR(100)) AS $$
-    UPDATE trading.bots 
-    SET is_active = FALSE
-    WHERE title = input_bot_title;
+    INSERT INTO trading.transactions(action_type, quantity, fk_portfolio_id, fk_currency_symbol)
+    VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_symbol);
 $$ LANGUAGE sql;
 
 
@@ -165,9 +175,24 @@ $$ LANGUAGE sql;
 --
 
 
---
+-- Заполнение таблицы тикерами
+DO $$
+DECLARE
+    symbol_list VARCHAR[] := ARRAY[
+        'btc', 'eth', 'sol', 'xrp', 'ada', 'avax', 'eos', 'trx',
+        'bch', 'ltc', 'xlm', 'etc', 'neo', 'link', 'mx', 'pepe', 
+        'luna', 'floki', 'ont', 'ksm', 'mln', 'dash', 'vet', 'doge' 
+    ];
+    i VARCHAR;
+BEGIN
+    FOREACH i IN ARRAY symbol_list
+    LOOP
+        INSERT INTO market.currencies(symbol) VALUES(CONCAT(i, 'usdt'));
+    END LOOP;
+END $$;
+
+
 -- Получение последней котировки определенного тикера
---
 CREATE OR REPLACE FUNCTION market.get_price(input_symbol VARCHAR(20)) 
 RETURNS NUMERIC AS $$
     SELECT t_price AS last_price 
@@ -192,7 +217,7 @@ $$ LANGUAGE sql IMMUTABLE;
 
 
 -- Вывод списка портфелей определенного пользователя
-CREATE OR REPLACE FUNCTION profile.get_portfolios(input_user_email profile.valid_email) 
+CREATE OR REPLACE FUNCTION profile.get_portfolios(input_user_email valid_email) 
 RETURNS TABLE(title VARCHAR(200)) AS $$
     SELECT p.title
     FROM profile.portfolios p
@@ -248,7 +273,7 @@ RETURNS TABLE(symbol VARCHAR(20), qty_currency NUMERIC, usdt_qty_currency NUMERI
         ) AS qty_currency, 
         SUM(
             CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
-        ) * market.get_price(fk_currency_symbol) AS usdt_qty_currency
+        ) * get_price(fk_currency_symbol) AS usdt_qty_currency
     FROM trading.transactions t
     JOIN market.currencies c ON t.fk_currency_symbol = c.symbol
     WHERE t.fk_portfolio_id = input_portfolio_id
@@ -257,7 +282,7 @@ $$ LANGUAGE sql VOLATILE;
 
 
 -- Вывод совокупного баланса пользователя
-CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email profile.valid_email) 
+CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email valid_email) 
 RETURNS NUMERIC AS $$
 DECLARE total_balance NUMERIC := 0;
         portfolio_id INT;
@@ -273,21 +298,3 @@ BEGIN
     RETURN total_balance;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
-
-
---
--- TRIGGERS
---
-
-
--- Запись в лог о добавлении новой транзакции
-CREATE OR REPLACE FUNCTION trading.alert_new_transaction() RETURNS TRIGGER AS $$
-BEGIN
-    RAISE NOTICE 'Добавлена новая транзакция';
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER alert_new_transaction_trigger
-AFTER INSERT ON trading.transactions
-FOR EACH ROW EXECUTE FUNCTION trading.alert_new_transaction();

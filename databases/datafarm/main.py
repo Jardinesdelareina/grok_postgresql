@@ -5,7 +5,11 @@ import websocket
 import datetime
 from db import cursor, connection
 
-symbol_list = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT']
+symbol_list = [
+    'btc', 'eth', 'sol', 'xrp', 'ada', 'avax', 'eos', 'trx',
+    'bch', 'ltc', 'xlm', 'etc', 'neo', 'link', 'mx', 'pepe', 
+    'luna', 'floki', 'ont', 'ksm', 'mln', 'dash', 'vet', 'doge'
+]
 
 
 class SocketConnection(websocket.WebSocketApp):
@@ -26,27 +30,21 @@ class SocketConnection(websocket.WebSocketApp):
 
 
     def message(self, msg): 
-        global deals_dict, symbols_list
         json_data = json.loads(msg)
         time = datetime.datetime.fromtimestamp(json_data['t'] / 1000)
         formatted_time = time.strftime('%Y-%m-%d %H:%M:%S')
         symbol = json_data['s']
         price = json_data['d']['p']
-        print(symbol, ' | ', formatted_time, ' | ', price)
+        print(symbol, '|', formatted_time, '|', price)
         cursor.execute(
-            """
-                INSERT INTO market.tickers(fk_symbol, t_time, t_price) 
-                VALUES(%s, %s, %s)
-            """,
+            "INSERT INTO market.tickers(fk_symbol, t_time, t_price) VALUES(%s, %s, %s)",
             (symbol.lower(), formatted_time, float(price))
         )
         connection.commit()
 
 
 for i in symbol_list:
-    cursor.execute(f"INSERT INTO market.currencies(symbol) VALUES('{i.lower()}')")
-    connection.commit()
     threading.Thread(
         target=SocketConnection, 
-        args=('wss://wbs.mexc.com/ws', [f'spot@public.miniTicker.v3.api@{i}@UTC+8'])
+        args=('wss://wbs.mexc.com/ws', [f'spot@public.miniTicker.v3.api@{i.upper()}USDT@UTC+8'])
     ).start()

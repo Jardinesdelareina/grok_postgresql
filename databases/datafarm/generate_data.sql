@@ -1,65 +1,53 @@
-DROP FUNCTION IF EXISTS trading.generate_num;
-CREATE OR REPLACE FUNCTION trading.generate_num(limit_num BIGINT) RETURNS INT AS $$
-    SELECT floor(random() * limit_num) + 1;
-$$ LANGUAGE sql;
-
-
-TRUNCATE TABLE trading.transactions CASCADE;
-TRUNCATE TABLE profile.portfolios CASCADE;
-TRUNCATE TABLE profile.users CASCADE;
-
-
-/* CALL profile.create_user('fueros.dev@mail.ru', '1234');
-CALL profile.create_user('developer@gmail.ru', '123456'); */
-
-/* CALL profile.create_portfolio('portfolio1btc', 1);
-CALL profile.create_portfolio('cryptoportfolio', 1);
-CALL profile.create_portfolio('testnameportfolio', 2); */
-
-CALL trading.create_bot('scalping', '---', '{"symbol": "btcusdt"}');
-CALL trading.create_bot('grid', '---', '{"symbol": "btcusdt"}');
-
-/* CALL trading.create_transaction('BUY', 1.22, 1, 1, 1);
-CALL trading.create_transaction('BUY', 0.44, 1, 1, 1);
-CALL trading.create_transaction('SELL', 0.874, 1, 1, 1);
-CALL trading.create_transaction('BUY', 33, 2, 2, 1);
-CALL trading.create_transaction('BUY', 3343, 2, 5, 2);
-CALL trading.create_transaction('BUY', 3343, 3, 4, 2); */
-
-
--- Запускать только при работающем потоке котировок
--- Иначе не будет актуальных данных о времени транзакции (на текущее время не будет текущей котировки)
+-- Генерация тестовых данных
 DO $$
+DECLARE
+    count_users INT := 100000;
+    count_portfolios SMALLINT := 10;
+    count_transactions INT := service.generate_num(50000);
+    build_random_string VARCHAR(8) := LEFT((md5(random()::text)), 8);
+    build_user VARCHAR;
+    random_symbol VARCHAR(20);
+    random_quantity NUMERIC;
+    random_portfolio_id INT;
 BEGIN
-    FOR i IN 1..1000 LOOP
+    -- Создание пользователя
+    FOR i IN 1..count_users LOOP
+        build_user := 'user_' || build_random_string || i || '@gmail.com';
         CALL profile.create_user(
-            'user_' || i || '@gmail.com', 
-            profile.crypt(LEFT((md5(random()::text)), 8), profile.gen_salt('md5'))
+            build_user, 
+            profile.crypt(build_random_string, profile.gen_salt('md5'))
         );
-    END LOOP;
-END $$;
+        COMMIT;
+        RAISE NOTICE 'Пользователь % добавлен', i;
+        PERFORM PG_SLEEP(1);
 
+        -- Создание портфеля
+        FOR j IN 1..service.generate_num(count_portfolios) LOOP
+            CALL profile.create_portfolio(
+                'portfolio_' || LEFT((md5(random()::text)), 8) || j || '_user_' || i,
+                build_user
+            );
+            COMMIT;
+            RAISE NOTICE 'Пользователь % Портфель % добавлен', i, j;
+            PERFORM PG_SLEEP(1);
 
-DO $$
-BEGIN
-    FOR i IN 1..10000 LOOP
-        CALL profile.create_portfolio(
-            'portfolio_' || i,
-            'user_' || trading.generate_num(900) || '@gmail.com'
-        );
-    END LOOP;
-END $$;
-
-
-DO $$
-BEGIN
-    FOR i IN 1..50000 LOOP
-        CALL trading.create_transaction(
-            CASE WHEN random() < 0.1 THEN 'SELL' ELSE 'BUY' END,
-            trading.generate_num(3),
-            trading.generate_num(9000),
-            'btcusdt',
-            trading.generate_num(2)
-        );
+            -- Создание транзакции
+            FOR l IN 1..count_transactions LOOP
+                BEGIN
+                    SELECT symbol INTO random_symbol FROM market.currencies ORDER BY random() LIMIT 1;
+                    SELECT service.count_after_comma(market.get_price(random_symbol))::NUMERIC INTO random_quantity;
+                    SELECT id INTO random_portfolio_id FROM profile.portfolios ORDER BY random() LIMIT 1;
+                    CALL trading.create_transaction(
+                        CASE WHEN service.generate_num(5) > 1 THEN 'BUY' ELSE 'SELL' END,
+                        random_quantity,
+                        random_portfolio_id,
+                        random_symbol
+                    );
+                    COMMIT;
+                    RAISE NOTICE 'Пользователь % Портфель % Транзакция % добавлена', i, j, l;
+                    PERFORM PG_SLEEP(1);
+                END;
+            END LOOP;
+        END LOOP;
     END LOOP;
 END $$;
