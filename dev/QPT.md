@@ -848,4 +848,4 @@ WHERE seq_scan > 0
 ORDER BY 5 DESC LIMIT 5;
 ```
 
-3. добавить индексы.
+3. Добавить индексы.

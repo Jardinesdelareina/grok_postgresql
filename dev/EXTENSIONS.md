@@ -44,7 +44,7 @@ CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
 $$ LANGUAGE plpgsql STABLE STRICT;
 EOF`
 
-Чтобы PostgreSQL нашел созданные нами файлы, они должны оказаться в каталоге SHAREDIR/extension. Значение SHAREDIR можно узнать так:
+Чтобы PostgreSQL нашел созданные файлы, они должны оказаться в каталоге SHAREDIR/extension. Значение SHAREDIR можно узнать так:
 `pg_config --sharedir`
 
 Создание файла для утилиты make:
@@ -70,7 +70,7 @@ SELECT * FROM pg_available_extensions WHERE name = 'fib';
 
 Само расширение не относится к какой-либо схеме, но объекты расширения — относятся. По-умолчанию схема - public. Но если установить расширение к отдельную схему `CREATE EXTENSION fib SCHEMA fib;` и вызвать `SELECT fib.fib(5)`, то произойдет ошибка, так как объект расширения не находится в данной схеме. Нужно обозначить путь поиска:
 ```sql
-SET search_path = fib, public;
+SET search_path TO fib, public;
 ```
 
 Так как расширение переносимо (relocatable = true), то расширение можно переместить в другую схему:
