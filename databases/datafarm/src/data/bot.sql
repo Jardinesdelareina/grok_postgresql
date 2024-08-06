@@ -1,4 +1,3 @@
--- Тестирование торговой стратегии
 CREATE OR REPLACE FUNCTION trading.scalping_classic(portfolio_id INT) 
 RETURNS VOID AS $$
 DECLARE
@@ -39,13 +38,14 @@ BEGIN
     END loop;
 END;
 $$ language plpgsql;
+COMMENT ON FUNCTION trading.scalping_classic(INT) IS 'Торговая стратегия классического стальпинга';
 
 
 DO $$
 DECLARE
-    build_random_string VARCHAR(8) := LEFT((md5(random()::text)), 8);
+    build_random_string VARCHAR(8) := LEFT((MD5(RANDOM()::TEXT)), 8);
     build_user TEXT := 'user_' || build_random_string || '@gmail.com';
-    build_portfolio TEXT := 'portfolio_' || LEFT((md5(random()::text)), 8);
+    build_portfolio TEXT := 'portfolio_' || build_random_string;
 BEGIN
     CALL profile.create_user(
         build_user, 

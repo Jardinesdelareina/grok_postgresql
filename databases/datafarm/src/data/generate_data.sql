@@ -4,7 +4,7 @@ DECLARE
     count_users INT := 100000;
     count_portfolios SMALLINT := 10;
     count_transactions INT := service.generate_num(50000);
-    build_random_string VARCHAR(8) := LEFT((md5(random()::text)), 8);
+    build_random_string VARCHAR(8) := LEFT((MD5(RANDOM()::TEXT)), 8);
     build_user VARCHAR;
     random_symbol VARCHAR(20);
     random_quantity NUMERIC;
@@ -24,7 +24,7 @@ BEGIN
         -- Создание портфеля
         FOR j IN 1..service.generate_num(count_portfolios) LOOP
             CALL profile.create_portfolio(
-                'portfolio_' || LEFT((md5(random()::text)), 8) || j || '_user_' || i,
+                'portfolio_' || LEFT((MD5(RANDOM()::TEXT)), 8) || j || '_user_' || i,
                 build_user
             );
             COMMIT;
@@ -34,9 +34,9 @@ BEGIN
             -- Создание транзакции
             FOR l IN 1..count_transactions LOOP
                 BEGIN
-                    SELECT symbol INTO random_symbol FROM market.currencies ORDER BY random() LIMIT 1;
+                    SELECT symbol INTO random_symbol FROM market.currencies ORDER BY RANDOM() LIMIT 1;
                     SELECT service.count_after_comma(market.get_price(random_symbol))::NUMERIC INTO random_quantity;
-                    SELECT id INTO random_portfolio_id FROM profile.portfolios ORDER BY random() LIMIT 1;
+                    SELECT id INTO random_portfolio_id FROM profile.portfolios ORDER BY RANDOM() LIMIT 1;
                     CALL trading.create_transaction(
                         CASE WHEN service.generate_num(5) > 1 THEN 'BUY' ELSE 'SELL' END,
                         random_quantity,

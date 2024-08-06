@@ -21,45 +21,59 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA service;
 --
 
 
--- Тикеры криптовалют
 CREATE TABLE market.currencies
 (
     symbol VARCHAR(20) PRIMARY KEY
 );
+COMMENT ON TABLE market.currencies IS 'Тикеры криптовалют';
+
+DO $$
+DECLARE
+    symbol_list VARCHAR[] := ARRAY[
+        'btc', 'eth', 'sol', 'xrp', 'ada', 'avax', 'eos', 'trx',
+        'bch', 'ltc', 'xlm', 'etc', 'neo', 'link', 'mx', 'pepe', 
+        'luna', 'floki', 'ont', 'ksm', 'mln', 'dash', 'vet', 'doge' 
+    ];
+    i VARCHAR;
+BEGIN
+    FOREACH i IN ARRAY symbol_list
+    LOOP
+        INSERT INTO market.currencies(symbol) VALUES(CONCAT(i, 'usdt'));
+    END LOOP;
+END $$;
 
 
--- Рыночные ордера
 CREATE TABLE market.tickers
 (
     fk_symbol VARCHAR(20) REFERENCES market.currencies(symbol),
     t_time TIMESTAMPTZ NOT NULL,
     t_price NUMERIC NOT NULL
 );
+COMMENT ON TABLE market.tickers IS 'Ценовые данные тикеров';
 
 
--- Валидация email
 CREATE DOMAIN profile.valid_email AS VARCHAR(128)
     CHECK (VALUE ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
+COMMENT ON DOMAIN profile.valid_email IS 'Валидация email';
 
 
--- Пользователи
 CREATE TABLE profile.users
 (
     email TEXT PRIMARY KEY,
     password VARCHAR(100) NOT NULL
 );
+COMMENT ON TABLE profile.users IS 'Пользователи';
 
 
--- Портфели пользователей
 CREATE TABLE profile.portfolios
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(128) NOT NULL,
     fk_user_email profile.valid_email REFERENCES profile.users(email)
 );
+COMMENT ON TABLE profile.portfolios IS 'Портфели пользователей';
 
 
--- Транзакции (покупка/продажа тикера в портфеле)
 CREATE TABLE trading.transactions
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,6 +83,7 @@ CREATE TABLE trading.transactions
     fk_portfolio_id INT REFERENCES profile.portfolios(id),
     fk_currency_symbol VARCHAR(20) REFERENCES market.currencies(symbol)
 );
+COMMENT ON TABLE trading.transactions IS 'Транзакции (покупка/продажа тикера в портфеле)';
 
 
 --
@@ -76,13 +91,12 @@ CREATE TABLE trading.transactions
 --
 
 
--- Генерация случайного целочисленного значения
 CREATE OR REPLACE FUNCTION service.generate_num(limit_num BIGINT) RETURNS INT AS $$
-    SELECT floor(random() * limit_num) + 1;
+    SELECT FLOOR(RANDOM() * limit_num) + 1;
 $$ LANGUAGE sql;
+COMMENT ON FUNCTION service.generate_num(BIGINT) IS 'Генерация случайного целочисленного значения';
 
 
--- Определение количества знаков после запятой в десятичном числе
 CREATE OR REPLACE FUNCTION service.count_after_comma(num NUMERIC)
 RETURNS INTEGER AS $$
 DECLARE
@@ -93,9 +107,9 @@ BEGIN
 RETURN num_len - comma_pos;
 END;
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION service.count_after_comma(NUMERIC) IS 'Определение количества знаков после запятой в десятичном числе';
 
 
--- Обфускация email-адресов
 CREATE OR REPLACE FUNCTION service.obfuscate_email(email profile.valid_email)
 RETURNS TEXT AS $$
 DECLARE
@@ -110,9 +124,9 @@ BEGIN
     RETURN obfuscated_email;
 END;
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION service.obfuscate_email(profile.valid_email) IS 'Обфускация email-адресов';
 
 
--- Деобфускация email-адресов
 CREATE OR REPLACE FUNCTION service.deobfuscate_email(obfuscated_email TEXT)
 RETURNS profile.valid_email AS $$
 DECLARE
@@ -131,6 +145,7 @@ BEGIN
     RETURN deobfuscated_email;
 END;
 $$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION service.deobfuscate_email(TEXT) IS 'Деобфускация email-адресов';
 
 
 --
@@ -138,7 +153,6 @@ $$ LANGUAGE plpgsql;
 --
 
 
--- Создание пользователя
 CREATE OR REPLACE PROCEDURE profile.create_user(
     input_email VARCHAR(128), 
     input_password VARCHAR(100)
@@ -146,9 +160,9 @@ CREATE OR REPLACE PROCEDURE profile.create_user(
     INSERT INTO profile.users(email, password)
     VALUES(service.obfuscate_email(input_email), service.crypt(input_password, service.gen_salt('md5')));
 $$ LANGUAGE sql;
+COMMENT ON PROCEDURE profile.create_user(VARCHAR(128), VARCHAR(100)) IS 'Создание пользователя';
 
 
--- Создание портфеля
 CREATE OR REPLACE PROCEDURE profile.create_portfolio(
     input_title VARCHAR(200), 
     input_user_email profile.valid_email
@@ -156,9 +170,9 @@ CREATE OR REPLACE PROCEDURE profile.create_portfolio(
     INSERT INTO profile.portfolios(title, fk_user_email)
     VALUES(input_title, input_user_email);
 $$ LANGUAGE sql;
+COMMENT ON PROCEDURE profile.create_portfolio(VARCHAR(200), profile.valid_email) IS 'Создание портфеля';
 
 
--- Создание транзакции
 CREATE OR REPLACE PROCEDURE trading.create_transaction(
     input_action_type VARCHAR(4),
     input_quantity NUMERIC,
@@ -168,6 +182,7 @@ CREATE OR REPLACE PROCEDURE trading.create_transaction(
     INSERT INTO trading.transactions(action_type, quantity, fk_portfolio_id, fk_currency_symbol)
     VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_symbol);
 $$ LANGUAGE sql;
+COMMENT ON PROCEDURE trading.create_transaction(VARCHAR(4), NUMERIC, INT, VARCHAR(20)) IS 'Создание транзакции';
 
 
 --
@@ -175,24 +190,6 @@ $$ LANGUAGE sql;
 --
 
 
--- Заполнение таблицы тикерами
-DO $$
-DECLARE
-    symbol_list VARCHAR[] := ARRAY[
-        'btc', 'eth', 'sol', 'xrp', 'ada', 'avax', 'eos', 'trx',
-        'bch', 'ltc', 'xlm', 'etc', 'neo', 'link', 'mx', 'pepe', 
-        'luna', 'floki', 'ont', 'ksm', 'mln', 'dash', 'vet', 'doge' 
-    ];
-    i VARCHAR;
-BEGIN
-    FOREACH i IN ARRAY symbol_list
-    LOOP
-        INSERT INTO market.currencies(symbol) VALUES(CONCAT(i, 'usdt'));
-    END LOOP;
-END $$;
-
-
--- Получение последней котировки определенного тикера
 CREATE OR REPLACE FUNCTION market.get_price(input_symbol VARCHAR(20)) 
 RETURNS NUMERIC AS $$
     SELECT t_price AS last_price 
@@ -201,9 +198,9 @@ RETURNS NUMERIC AS $$
     ORDER BY t_time DESC 
     LIMIT 1;
 $$ LANGUAGE sql VOLATILE;
+COMMENT ON FUNCTION market.get_price(VARCHAR(20))  IS 'Получение последней котировки определенного тикера';
 
 
--- Получение нужной котировки по выбранному тикеру в выбранный момент времени
 CREATE OR REPLACE FUNCTION market.get_price_with_time(
     input_symbol VARCHAR(20),
     input_time TIMESTAMPTZ
@@ -214,18 +211,18 @@ CREATE OR REPLACE FUNCTION market.get_price_with_time(
     ORDER BY ABS(EXTRACT(EPOCH FROM (t_time - input_time)))
     LIMIT 1
 $$ LANGUAGE sql IMMUTABLE;
+COMMENT ON FUNCTION market.get_price_with_time(VARCHAR(20), TIMESTAMPTZ)  IS 'Получение последней котировки определенного тикера';
 
 
--- Вывод списка портфелей определенного пользователя
-CREATE OR REPLACE FUNCTION profile.get_portfolios(input_user_email valid_email) 
+CREATE OR REPLACE FUNCTION profile.get_portfolios(input_user_email profile.valid_email) 
 RETURNS TABLE(title VARCHAR(200)) AS $$
     SELECT p.title
     FROM profile.portfolios p
     WHERE fk_user_email = input_user_email;
 $$ LANGUAGE sql STABLE;
+COMMENT ON FUNCTION profile.get_portfolios(profile.valid_email) IS 'Вывод списка портфелей определенного пользователя';
 
 
--- Расчет объема транзакции в usdt
 CREATE OR REPLACE FUNCTION trading.get_value_transaction(input_transaction_id UUID) 
 RETURNS NUMERIC AS $$
 DECLARE qty_transaction NUMERIC;
@@ -241,9 +238,9 @@ BEGIN
     RETURN qty_transaction;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+COMMENT ON FUNCTION trading.get_value_transaction(UUID) IS 'Расчет объема транзакции в usdt';
 
 
--- Вывод баланса портфеля в usdt
 CREATE OR REPLACE FUNCTION market.get_balance_portfolio(input_portfolio_id INT)
 RETURNS NUMERIC AS $$
 DECLARE total_quantity NUMERIC := 0;
@@ -261,9 +258,9 @@ BEGIN
     RETURN total_quantity;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+COMMENT ON FUNCTION market.get_balance_portfolio(INT) IS 'Вывод баланса портфеля в usdt';
 
 
--- Вывод криптовалют, их количества и балансов в портфеле
 CREATE OR REPLACE FUNCTION market.get_balance_ticker_portfolio(input_portfolio_id INT) 
 RETURNS TABLE(symbol VARCHAR(20), qty_currency NUMERIC, usdt_qty_currency NUMERIC) AS $$
     SELECT DISTINCT 
@@ -279,9 +276,9 @@ RETURNS TABLE(symbol VARCHAR(20), qty_currency NUMERIC, usdt_qty_currency NUMERI
     WHERE t.fk_portfolio_id = input_portfolio_id
     GROUP BY fk_currency_symbol;
 $$ LANGUAGE sql VOLATILE;
+COMMENT ON FUNCTION market.get_balance_ticker_portfolio(INT)  IS 'Вывод криптовалют, их количества и балансов в портфеле';
 
 
--- Вывод совокупного баланса пользователя
 CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email valid_email) 
 RETURNS NUMERIC AS $$
 DECLARE total_balance NUMERIC := 0;
@@ -298,3 +295,4 @@ BEGIN
     RETURN total_balance;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
+COMMENT ON FUNCTION market.get_total_balance_user(profile.valid_email) IS 'Вывод совокупного баланса пользователя';
