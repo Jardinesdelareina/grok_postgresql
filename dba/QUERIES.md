@@ -43,7 +43,7 @@ GROUP BY A.schemaname;
 Детальная информация о каждой таблице с указанием её схемы, размера без индексов, размере индексов, суммарном размере таблицы и индексов, а также количестве строк в таблице.
 ```sql
 SELECT schemaname,
-       C.relname AS "relation",
+       C.relname AS relation,
        pg_size_pretty (pg_relation_size(C.oid)) as table,
        pg_size_pretty (pg_total_relation_size (C.oid)-pg_relation_size(C.oid)) as index,
        pg_size_pretty (pg_total_relation_size (C.oid)) as table_index,
@@ -54,6 +54,7 @@ LEFT JOIN pg_stat_user_tables A ON C.relname = A.relname
 WHERE nspname NOT IN ('pg_catalog', 'information_schema')
 AND C.relkind <> 'i'
 AND nspname !~ '^pg_toast'
+AND C.relname = 'trading.transactions'
 ORDER BY pg_total_relation_size (C.oid) DESC;
 ```
 

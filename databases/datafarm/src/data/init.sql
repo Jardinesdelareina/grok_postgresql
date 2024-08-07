@@ -298,44 +298,23 @@ $$ LANGUAGE plpgsql VOLATILE;
 COMMENT ON FUNCTION market.get_total_balance_user(profile.valid_email) IS 'Вывод совокупного баланса пользователя';
 
 
-CREATE OR REPLACE FUNCTION trading.scalping_classic(portfolio_id INT) 
-RETURNS VOID AS $$
-DECLARE
-    title_bot VARCHAR(100) := 'scalping_classic';
-    symbol VARCHAR(20) := 'xrpusdt';
-    quantity NUMERIC := 1000;
-    last_price NUMERIC;
-    min_price_range NUMERIC;
-    max_price_range NUMERIC;
-    open_position BOOLEAN := FALSE;
-BEGIN
-    last_price := (SELECT market.get_price(symbol));
-    MIN_price_range := (SELECT MIN(t_price) 
-                    FROM market.tickers 
-                    WHERE fk_symbol = symbol AND t_time BETWEEN NOW() - INTERVAL '1 hour' AND NOW());
-    max_price_range := (SELECT MAX(t_price) 
-                    FROM market.tickers 
-                    WHERE fk_symbol = symbol AND t_time BETWEEN NOW() - INTERVAL '1 hour' AND NOW());
+--
+-- TRIGGERS
+--
 
-    WHILE TRUE
-    LOOP
-        IF NOT open_position THEN
-            IF last_price > (min_price_range + (min_price_range * 0.01)) THEN
-                open_position := TRUE;
-                CALL trading.create_transaction('BUY', quantity, portfolio_id, symbol);
-            ELSE
-                RAISE NOTICE 'Ожидание BUY';
-            END IF;
-        END IF;
-        IF open_position THEN
-            IF last_price < (max_price_range + (max_price_range * 0.01)) THEN
-                open_position := false;
-                CALL trading.create_transaction('SELL', quantity, portfolio_id, symbol);
-            ELSE
-                RAISE NOTICE 'Ожидание SELL';
-            END IF;
-        END IF;
-    END loop;
+
+CREATE OR REPLACE FUNCTION trading.print_size_transactions() RETURNS TRIGGER AS $$
+BEGIN
+    IF (SELECT COUNT(id) FROM trading.transactions) % 100000 = 0 THEN
+        RAISE NOTICE 'Размер таблицы transactions %', pg_size_pretty(pg_total_relation_size('trading.transactions')) AS object_size;
+    END IF;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION trading.scalping_classic(INT) IS 'Торговая стратегия классического стальпинга';
+
+CREATE TRIGGER tgr_print_size_transactions
+AFTER INSERT ON trading.transactions
+FOR EACH ROW EXECUTE FUNCTION trading.print_size_transactions();
+COMMENT ON TRIGGER tgr_print_size_transactions ON trading.transactions IS 'Печать суммарного объема транзакций в файл';
+
+
