@@ -5,17 +5,17 @@ DECLARE
     count_portfolios SMALLINT := 10;
     count_transactions INT := service.generate_num(50000);
     build_random_string VARCHAR(8) := LEFT((MD5(RANDOM()::TEXT)), 8);
-    build_user VARCHAR;
+    build_user TEXT;
     random_symbol VARCHAR(20);
     random_quantity NUMERIC;
     random_portfolio_id INT;
 BEGIN
     -- Создание пользователя
     FOR i IN 1..count_users LOOP
-        build_user := 'user_' || build_random_string || i || '@gmail.com';
+        build_user := 'user_' || build_random_string || i || '@mail.com';
         CALL profile.create_user(
             build_user, 
-            profile.crypt(build_random_string, profile.gen_salt('md5'))
+            build_random_string
         );
         COMMIT;
         RAISE NOTICE 'Пользователь % добавлен', i;

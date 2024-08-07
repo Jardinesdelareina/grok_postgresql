@@ -295,3 +295,12 @@ FROM information_schema.columns
 WHERE column_name = '<название таблицы>'
 ORDER BY table_schema, table_name;
 ```
+
+
+### Остановка всех процессов кроме текущего с определенной базой данных
+
+```sql
+SELECT pg_terminate_backend(pg_stat_activity.pid) 
+FROM pg_stat_activity 
+WHERE pg_stat_activity.datname = '<название базы данных>' AND pid <> pg_backend_pid();
+```

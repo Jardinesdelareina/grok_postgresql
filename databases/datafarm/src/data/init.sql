@@ -1,6 +1,6 @@
 \connect postgres
 
-DROP DATABASE IF EXISTS datafarm;
+DROP DATABASE IF EXISTS datafarm WITH (FORCE);
 CREATE DATABASE datafarm;
 
 \connect datafarm
@@ -154,13 +154,13 @@ COMMENT ON FUNCTION service.deobfuscate_email(TEXT) IS 'Деобфускация
 
 
 CREATE OR REPLACE PROCEDURE profile.create_user(
-    input_email VARCHAR(128), 
+    input_email profile.valid_email, 
     input_password VARCHAR(100)
     ) AS $$
     INSERT INTO profile.users(email, password)
-    VALUES(service.obfuscate_email(input_email), service.crypt(input_password, service.gen_salt('md5')));
+    VALUES(input_email, service.crypt(input_password, service.gen_salt('md5')));
 $$ LANGUAGE sql;
-COMMENT ON PROCEDURE profile.create_user(VARCHAR(128), VARCHAR(100)) IS 'Создание пользователя';
+COMMENT ON PROCEDURE profile.create_user(profile.valid_email, VARCHAR(100)) IS 'Создание пользователя';
 
 
 CREATE OR REPLACE PROCEDURE profile.create_portfolio(
@@ -270,7 +270,7 @@ RETURNS TABLE(symbol VARCHAR(20), qty_currency NUMERIC, usdt_qty_currency NUMERI
         ) AS qty_currency, 
         SUM(
             CASE WHEN t.action_type = 'BUY' THEN t.quantity ELSE -t.quantity END
-        ) * get_price(fk_currency_symbol) AS usdt_qty_currency
+        ) * market.get_price(fk_currency_symbol) AS usdt_qty_currency
     FROM trading.transactions t
     JOIN market.currencies c ON t.fk_currency_symbol = c.symbol
     WHERE t.fk_portfolio_id = input_portfolio_id
@@ -279,7 +279,7 @@ $$ LANGUAGE sql VOLATILE;
 COMMENT ON FUNCTION market.get_balance_ticker_portfolio(INT)  IS 'Вывод криптовалют, их количества и балансов в портфеле';
 
 
-CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email valid_email) 
+CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email profile.valid_email) 
 RETURNS NUMERIC AS $$
 DECLARE total_balance NUMERIC := 0;
         portfolio_id INT;
@@ -296,3 +296,46 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql VOLATILE;
 COMMENT ON FUNCTION market.get_total_balance_user(profile.valid_email) IS 'Вывод совокупного баланса пользователя';
+
+
+CREATE OR REPLACE FUNCTION trading.scalping_classic(portfolio_id INT) 
+RETURNS VOID AS $$
+DECLARE
+    title_bot VARCHAR(100) := 'scalping_classic';
+    symbol VARCHAR(20) := 'xrpusdt';
+    quantity NUMERIC := 1000;
+    last_price NUMERIC;
+    min_price_range NUMERIC;
+    max_price_range NUMERIC;
+    open_position BOOLEAN := FALSE;
+BEGIN
+    last_price := (SELECT market.get_price(symbol));
+    MIN_price_range := (SELECT MIN(t_price) 
+                    FROM market.tickers 
+                    WHERE fk_symbol = symbol AND t_time BETWEEN NOW() - INTERVAL '1 hour' AND NOW());
+    max_price_range := (SELECT MAX(t_price) 
+                    FROM market.tickers 
+                    WHERE fk_symbol = symbol AND t_time BETWEEN NOW() - INTERVAL '1 hour' AND NOW());
+
+    WHILE TRUE
+    LOOP
+        IF NOT open_position THEN
+            IF last_price > (min_price_range + (min_price_range * 0.01)) THEN
+                open_position := TRUE;
+                CALL trading.create_transaction('BUY', quantity, portfolio_id, symbol);
+            ELSE
+                RAISE NOTICE 'Ожидание BUY';
+            END IF;
+        END IF;
+        IF open_position THEN
+            IF last_price < (max_price_range + (max_price_range * 0.01)) THEN
+                open_position := false;
+                CALL trading.create_transaction('SELL', quantity, portfolio_id, symbol);
+            ELSE
+                RAISE NOTICE 'Ожидание SELL';
+            END IF;
+        END IF;
+    END loop;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION trading.scalping_classic(INT) IS 'Торговая стратегия классического стальпинга';
