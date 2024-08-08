@@ -315,6 +315,14 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER tgr_print_size_transactions
 AFTER INSERT ON trading.transactions
 FOR EACH ROW EXECUTE FUNCTION trading.print_size_transactions();
-COMMENT ON TRIGGER tgr_print_size_transactions ON trading.transactions IS 'Печать суммарного объема транзакций в файл';
+COMMENT ON TRIGGER tgr_print_size_transactions ON trading.transactions IS 'Печать размера таблицы';
 
 
+--
+-- INDEXES
+--
+
+
+CREATE INDEX idx_symbol ON market.tickers(fk_symbol);
+CREATE INDEX idx_user_email ON profile.portfolios(fk_user_email);
+CREATE INDEX idx_portfolio_id ON trading.transactions(fk_portfolio_id);
