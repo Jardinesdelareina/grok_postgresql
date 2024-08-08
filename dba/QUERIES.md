@@ -288,6 +288,7 @@ SELECT pg_reload_conf();
 SELECT rolname, rolpassword FROM pg_authid;
 ```
 
+
 ### Таблицы в базе данных, содержащих определенную колонку
 
 ```sql
