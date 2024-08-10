@@ -53,7 +53,7 @@ CREATE TABLE market.tickers
 COMMENT ON TABLE market.tickers IS 'Ценовые данные тикеров';
 
 
-CREATE DOMAIN service.valid_email AS VARCHAR(128)
+CREATE DOMAIN service.valid_email AS TEXT
     CHECK (VALUE ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
 COMMENT ON DOMAIN service.valid_email IS 'Валидация email';
 
@@ -61,23 +61,6 @@ COMMENT ON DOMAIN service.valid_email IS 'Валидация email';
 CREATE DOMAIN service.valid_action_type AS VARCHAR(4)
     CHECK (VALUE IN ('BUY', 'SELL'));
 COMMENT ON DOMAIN service.valid_action_type IS 'Валидация action_type';
-
-
-CREATE TABLE profile.users
-(
-    email TEXT PRIMARY KEY,
-    password VARCHAR(100) NOT NULL
-);
-COMMENT ON TABLE profile.users IS 'Пользователи';
-
-
-CREATE TABLE profile.portfolios
-(
-    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title VARCHAR(128) NOT NULL,
-    fk_user_email service.valid_email REFERENCES profile.users(email)
-);
-COMMENT ON TABLE profile.portfolios IS 'Портфели пользователей';
 
 
 CREATE TABLE p2p.emitents
@@ -94,7 +77,28 @@ CREATE TABLE p2p.payments
     number VARCHAR(100) NOT NULL,
     fk_emitent VARCHAR(50) REFERENCES p2p.emitents(title)
 );
-COMMENT ON TABLE p2p.payments IS 'Сплатежные средства';
+COMMENT ON TABLE p2p.payments IS 'Платежные средства';
+
+
+CREATE TABLE profile.users
+(
+    email TEXT PRIMARY KEY,
+    password VARCHAR(100) NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    date_of_register DATE DEFAULT NOW(),
+    fk_payment SMALLINT REFERENCES p2p.payments(id)
+);
+COMMENT ON TABLE profile.users IS 'Пользователи';
+
+
+CREATE TABLE profile.portfolios
+(
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    title VARCHAR(128) NOT NULL,
+    fk_user_email service.valid_email REFERENCES profile.users(email)
+);
+COMMENT ON TABLE profile.portfolios IS 'Портфели пользователей';
+
 
 
 CREATE TABLE p2p.reviews
@@ -129,7 +133,7 @@ CREATE TABLE p2p.deals
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     deal_status VARCHAR(8) CHECK (deal_status IN ('AWAITS', 'PAYED', 'CANCELLED')) DEFAULT 'AWAITS',
-    fk_offer_id UUID REFERENCES p2p.offers(id),
+    fk_offer_id BIGINT REFERENCES p2p.offers(id),
     fk_user_merchant service.valid_email REFERENCES profile.users(email),
     fk_user_recipient service.valid_email REFERENCES profile.users(email)
 );
