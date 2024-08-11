@@ -12,8 +12,6 @@ CREATE SCHEMA profile;
 CREATE SCHEMA trading;
 CREATE SCHEMA service;
 
-SET search_path TO market, profile, trading, p2p, service, public;
-
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA service;
 
 
@@ -250,6 +248,11 @@ CREATE OR REPLACE PROCEDURE trading.create_transaction(
 $$ LANGUAGE sql;
 COMMENT ON PROCEDURE trading.create_transaction(VARCHAR(4), NUMERIC, INT, VARCHAR(20)) IS 'Создание транзакции';
 
+
+CREATE OR REPLACE PROCEDURE service.drop_tickers() AS $$
+    TRUNCATE TABLE market.ticker;
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE service.drop_tickers() IS 'Очистка данных из таблицы котировок';
 
 --
 -- FUNCTIONS
