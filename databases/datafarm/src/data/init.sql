@@ -249,10 +249,10 @@ $$ LANGUAGE sql;
 COMMENT ON PROCEDURE trading.create_transaction(VARCHAR(4), NUMERIC, INT, VARCHAR(20)) IS 'Создание транзакции';
 
 
-CREATE OR REPLACE PROCEDURE service.drop_tickers() AS $$
-    TRUNCATE TABLE market.ticker;
+CREATE OR REPLACE PROCEDURE service.drop_tickers(symbol VARCHAR(20)) AS $$
+    DELETE FROM market.tickers WHERE fk_symbol = symbol;
 $$ LANGUAGE sql;
-COMMENT ON PROCEDURE service.drop_tickers() IS 'Очистка данных из таблицы котировок';
+COMMENT ON PROCEDURE service.drop_tickers(symbol VARCHAR(20)) IS 'Очистка данных из таблицы котировок';
 
 --
 -- FUNCTIONS
