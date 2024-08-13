@@ -326,11 +326,10 @@ FOR EACH ROW EXECUTE FUNCTION flights_v_update();
 
 В консоль выведется текстовое сообщение, переданное параметром в debug_message:
 ```sql
-CREATE PROCEDURE debug_message(msg TEXT)
-AS $$
+CREATE PROCEDURE debug_message(msg TEXT) AS $$
 BEGIN
 	RAISE NOTICE '%', msg;
-END
+END;
 $$ LANGUAGE plpgsql;
 ```
 

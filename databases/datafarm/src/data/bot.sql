@@ -12,9 +12,10 @@ DECLARE
     min_interval NUMERIC := 0.002;
     open_position BOOLEAN := FALSE;
     symbol_list VARCHAR[] := ARRAY[
-        'btcusdt', 'ethusdt', 'solusdt', 'xrpusdt'
+        'btcusdt'
     ];
     i VARCHAR;
+    last_log TEXT := '';
 BEGIN
     CALL profile.create_user(test_user_email, '1234');
     CALL profile.create_portfolio('Классический скальпинг', test_user_email);
@@ -40,9 +41,16 @@ BEGIN
                     CALL trading.create_transaction('BUY', quantity, portfolio_id, i);
                     CALL service.drop_tickers(i);
                     open_position := TRUE;
-                    RAISE NOTICE '[BUY] % : %', i, quantity;
+                    COMMIT;
+                    IF last_log <> '[BUY] ' || i || ' : ' || quantity || NOW() THEN
+                        RAISE NOTICE '[BUY] % : % %', i, quantity, NOW();
+                        last_log := '[BUY] ' || i || ' : ' || quantity || NOW();
+                    END IF;
                 ELSE
-                    RAISE NOTICE '[AWAIT] BUY %', i;
+                    IF last_log <> '[AWAIT] BUY ' || i THEN
+                        RAISE NOTICE '[AWAIT] BUY %', i;
+                        last_log := '[AWAIT] BUY ' || i;
+                    END IF;
                 END IF;
             END IF;
             IF open_position THEN
@@ -50,9 +58,16 @@ BEGIN
                     CALL trading.create_transaction('SELL', quantity, portfolio_id, i);
                     CALL service.drop_tickers(i);
                     open_position := FALSE;
-                    RAISE NOTICE '[SELL] % : %', i, quantity;
+                    COMMIT;
+                    IF last_log <> '[SELL] ' || i || ' : ' || quantity || NOW() THEN
+                        RAISE NOTICE '[SELL] % : % %', i, quantity, NOW();
+                        last_log := '[SELL] ' || i || ' : ' || quantity || NOW();
+                    END IF;
                 ELSE
-                    RAISE NOTICE '[AWAIT] BUY %', i;
+                    IF last_log <> '[AWAIT] SELL ' || i THEN
+                        RAISE NOTICE '[AWAIT] SELL %', i;
+                        last_log := '[AWAIT] SELL ' || i;
+                    END IF;
                 END IF;
             END IF;
         END LOOP;
