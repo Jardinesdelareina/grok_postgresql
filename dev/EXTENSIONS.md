@@ -136,3 +136,10 @@ WHERE name = 'fib';`
 ```sql
 ALTER EXTENSION fib UPDATE;
 ```
+
+Список доступных расширений, доступных для загрузки в базу данных:
+```sql
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
+ORDER BY name;
+```

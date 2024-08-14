@@ -1,3 +1,10 @@
+CREATE OR REPLACE PROCEDURE service.drop_tickers(symbol VARCHAR(20)) AS $$
+    DELETE FROM market.tickers WHERE fk_symbol = symbol;
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE service.drop_tickers(symbol VARCHAR(20)) IS 'Очистка данных из таблицы котировок';
+
+
+-- Торговый алгоритм
 DO $$
 DECLARE
     title_bot VARCHAR(100) := 'scalping_classic';
