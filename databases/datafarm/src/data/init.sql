@@ -24,7 +24,8 @@ CREATE TABLE market.currencies
 (
     symbol VARCHAR(20) PRIMARY KEY
 );
-COMMENT ON TABLE market.currencies IS 'Тикеры криптовалют';
+COMMENT ON TABLE market.currencies 
+IS 'Тикеры криптовалют';
 
 DO $$
 DECLARE
@@ -48,34 +49,20 @@ CREATE TABLE market.tickers
     t_time TIMESTAMPTZ NOT NULL,
     t_price NUMERIC NOT NULL
 );
-COMMENT ON TABLE market.tickers IS 'Ценовые данные тикеров';
+COMMENT ON TABLE market.tickers 
+IS 'Ценовые данные тикеров';
 
 
 CREATE DOMAIN service.valid_email AS TEXT
     CHECK (VALUE ~* '^[A-Za-z0-9._+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$');
-COMMENT ON DOMAIN service.valid_email IS 'Валидация email';
+COMMENT ON DOMAIN service.valid_email 
+IS 'Валидация email';
 
 
 CREATE DOMAIN service.valid_action_type AS VARCHAR(4)
     CHECK (VALUE IN ('BUY', 'SELL'));
-COMMENT ON DOMAIN service.valid_action_type IS 'Валидация action_type';
-
-
-CREATE TABLE p2p.emitents
-(
-    title VARCHAR(50) PRIMARY KEY
-);
-COMMENT ON TABLE p2p.emitents IS 'Эмитенты/платежные системы';
-
-
-CREATE TABLE p2p.payments
-(
-    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
-    number VARCHAR(100) NOT NULL,
-    fk_emitent VARCHAR(50) REFERENCES p2p.emitents(title)
-);
-COMMENT ON TABLE p2p.payments IS 'Платежные средства';
+COMMENT ON DOMAIN service.valid_action_type 
+IS 'Валидация action_type';
 
 
 CREATE TABLE profile.users
@@ -83,10 +70,10 @@ CREATE TABLE profile.users
     email TEXT PRIMARY KEY,
     password VARCHAR(100) NOT NULL,
     is_verified BOOLEAN DEFAULT FALSE,
-    date_of_register DATE DEFAULT NOW(),
-    fk_payment SMALLINT REFERENCES p2p.payments(id)
+    date_of_register TIMESTAMPTZ DEFAULT NOW()
 );
-COMMENT ON TABLE profile.users IS 'Пользователи';
+COMMENT ON TABLE profile.users 
+IS 'Пользователи';
 
 
 CREATE TABLE profile.portfolios
@@ -95,8 +82,42 @@ CREATE TABLE profile.portfolios
     title VARCHAR(128) NOT NULL,
     fk_user_email service.valid_email REFERENCES profile.users(email)
 );
-COMMENT ON TABLE profile.portfolios IS 'Портфели пользователей';
+COMMENT ON TABLE profile.portfolios 
+IS 'Портфели пользователей';
 
+
+CREATE TABLE p2p.emitents
+(
+    title VARCHAR(50) PRIMARY KEY
+);
+COMMENT ON TABLE p2p.emitents 
+IS 'Эмитенты/платежные системы';
+
+DO $$
+DECLARE
+    emitent_list VARCHAR[] := ARRAY[
+        'SBER', 'VTB', 'T', 'ALFA', 'ROSBANK', 'RAIFFAISEN', 
+        'GAZPROM', 'URALSIB', 'OPEN', 'ROSSELHOZ', 'RUSSTANDART'
+    ];
+    i VARCHAR;
+BEGIN
+    FOREACH i IN ARRAY emitent_list
+    LOOP
+        INSERT INTO p2p.emitents(title) VALUES(i);
+    END LOOP;
+END $$;
+
+
+CREATE TABLE p2p.payments
+(
+    id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fk_emitent VARCHAR(50) REFERENCES p2p.emitents(title),
+    name VARCHAR(50) NOT NULL,
+    number VARCHAR(16) UNIQUE NOT NULL,
+    fk_user_email service.valid_email REFERENCES profile.users(email)
+);
+COMMENT ON TABLE p2p.payments 
+IS 'Платежные способы';
 
 
 CREATE TABLE p2p.reviews
@@ -104,11 +125,12 @@ CREATE TABLE p2p.reviews
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     sentiment VARCHAR(8) CHECK (sentiment IN ('positive', 'negative')) NOT NULL,
-    text_rewiew TEXT,
+    text_review TEXT,
     fk_user_on service.valid_email REFERENCES profile.users(email),
     fk_user_from service.valid_email REFERENCES profile.users(email)
 );
-COMMENT ON TABLE p2p.reviews IS 'Отзывы о мерчантах';
+COMMENT ON TABLE p2p.reviews 
+IS 'Отзывы о мерчантах';
 
 
 CREATE TABLE p2p.offers
@@ -124,18 +146,21 @@ CREATE TABLE p2p.offers
     offer_status VARCHAR(6) CHECK (offer_status IN ('ACTIVE', 'INACTIVE')) DEFAULT 'ACTIVE',
     fk_user_creator service.valid_email REFERENCES profile.users(email)
 );
-COMMENT ON TABLE p2p.offers IS 'Предложения о покупке/продаже криптовалюты';
+COMMENT ON TABLE p2p.offers 
+IS 'Предложения о покупке/продаже криптовалюты';
 
 
 CREATE TABLE p2p.deals
 (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     deal_status VARCHAR(8) CHECK (deal_status IN ('AWAITS', 'PAYED', 'CANCELLED')) DEFAULT 'AWAITS',
+    quantity NUMERIC NOT NULL,
     fk_offer_id BIGINT REFERENCES p2p.offers(id),
     fk_user_merchant service.valid_email REFERENCES profile.users(email),
     fk_user_recipient service.valid_email REFERENCES profile.users(email)
 );
-COMMENT ON TABLE p2p.deals IS 'Сделки p2p';
+COMMENT ON TABLE p2p.deals 
+IS 'Сделки p2p';
 
 
 CREATE TABLE trading.transactions
@@ -147,7 +172,8 @@ CREATE TABLE trading.transactions
     fk_portfolio_id INT REFERENCES profile.portfolios(id),
     fk_currency_symbol VARCHAR(20) REFERENCES market.currencies(symbol)
 );
-COMMENT ON TABLE trading.transactions IS 'Транзакции (покупка/продажа тикера в портфеле)';
+COMMENT ON TABLE trading.transactions 
+IS 'Транзакции (покупка/продажа тикера в портфеле)';
 
 
 --
@@ -158,7 +184,8 @@ COMMENT ON TABLE trading.transactions IS 'Транзакции (покупка/�
 CREATE OR REPLACE FUNCTION service.generate_num(limit_num BIGINT) RETURNS INT AS $$
     SELECT FLOOR(RANDOM() * limit_num) + 1;
 $$ LANGUAGE sql;
-COMMENT ON FUNCTION service.generate_num(BIGINT) IS 'Генерация случайного целочисленного значения';
+COMMENT ON FUNCTION service.generate_num(BIGINT) 
+IS 'Генерация случайного целочисленного значения';
 
 
 CREATE OR REPLACE FUNCTION service.count_after_comma(num NUMERIC)
@@ -171,7 +198,8 @@ BEGIN
 RETURN num_len - comma_pos;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION service.count_after_comma(NUMERIC) IS 'Определение количества знаков после запятой в десятичном числе';
+COMMENT ON FUNCTION service.count_after_comma(NUMERIC) 
+IS 'Определение количества знаков после запятой в десятичном числе';
 
 
 CREATE OR REPLACE FUNCTION service.obfuscate_email(email service.valid_email)
@@ -188,7 +216,8 @@ BEGIN
     RETURN obfuscated_email;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION service.obfuscate_email(service.valid_email) IS 'Обфускация email-адресов';
+COMMENT ON FUNCTION service.obfuscate_email(service.valid_email) 
+IS 'Обфускация email-адресов';
 
 
 CREATE OR REPLACE FUNCTION service.deobfuscate_email(obfuscated_email TEXT)
@@ -209,7 +238,8 @@ BEGIN
     RETURN deobfuscated_email;
 END;
 $$ LANGUAGE plpgsql;
-COMMENT ON FUNCTION service.deobfuscate_email(TEXT) IS 'Деобфускация email-адресов';
+COMMENT ON FUNCTION service.deobfuscate_email(TEXT) 
+IS 'Деобфускация email-адресов';
 
 
 --
@@ -224,7 +254,8 @@ CREATE OR REPLACE PROCEDURE profile.create_user(
     INSERT INTO profile.users(email, password)
     VALUES(input_email, service.crypt(input_password, service.gen_salt('md5')));
 $$ LANGUAGE sql;
-COMMENT ON PROCEDURE profile.create_user(service.valid_email, VARCHAR(100)) IS 'Создание пользователя';
+COMMENT ON PROCEDURE profile.create_user(service.valid_email, VARCHAR(100)) 
+IS 'Создание пользователя';
 
 
 CREATE OR REPLACE PROCEDURE profile.create_portfolio(
@@ -234,7 +265,130 @@ CREATE OR REPLACE PROCEDURE profile.create_portfolio(
     INSERT INTO profile.portfolios(title, fk_user_email)
     VALUES(input_title, input_user_email);
 $$ LANGUAGE sql;
-COMMENT ON PROCEDURE profile.create_portfolio(VARCHAR(200), service.valid_email) IS 'Создание портфеля';
+COMMENT ON PROCEDURE profile.create_portfolio(VARCHAR(200), service.valid_email) 
+IS 'Создание портфеля';
+
+
+CREATE OR REPLACE FUNCTION service.sum_of_digits(num INT) RETURNS INT AS $$
+DECLARE
+    sum INTEGER := 0;
+BEGIN
+    WHILE num > 0 LOOP
+        sum := sum + num % 10;
+        num := num / 10;
+    END LOOP;
+    RETURN sum;
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION service.sum_of_digits(INT) IS 'Алгоритм Луна';
+
+
+CREATE OR REPLACE FUNCTION service.valid_bank_card_number(card_number VARCHAR) 
+RETURNS VARCHAR AS $$
+DECLARE
+    card_number_digits INT[];
+    total_sum INTEGER := 0;
+    alternate_sum INTEGER := 0;
+BEGIN
+    -- Проверка, что номер карты состоит только из цифр
+    IF card_number ~ '^\d+$' THEN
+
+        -- Преобразование номера карты в массив цифр
+        card_number_digits := string_to_array(card_number, NULL);
+        
+        -- Проверка, что номер карты состоит из 16 цифр
+        IF array_length(card_number_digits, 1) = 16 THEN
+
+            -- Применение алгоритма Луна для валидации номера карты
+            FOR i IN REVERSE 1..16 LOOP
+                IF i % 2 = 0 THEN
+                    alternate_sum := alternate_sum + card_number_digits[i];
+                ELSE
+                    total_sum := total_sum + sum_of_digits(card_number_digits[i] * 2);
+                END IF;
+            END LOOP;
+            
+            -- Проверка, что сумма делится на 10 без остатка
+            IF (total_sum + alternate_sum) % 10 = 0 THEN
+                RETURN card_number;
+            END IF;
+        END IF;
+    END IF;
+    RETURN 'Невалидный номер';
+END;
+$$ LANGUAGE plpgsql;
+COMMENT ON FUNCTION service.valid_bank_card_number(VARCHAR) 
+IS 'Валидация номеров банковских карт';
+
+
+CREATE OR REPLACE PROCEDURE p2p.create_payment(
+    input_emitent VARCHAR(50),
+    input_name VARCHAR(50),
+    input_number VARCHAR(16),
+    input_user_email service.valid_email
+    ) AS $$
+    INSERT INTO p2p.payments(fk_emitent, name, number, fk_user_email)
+    VALUES(
+        input_emitent, 
+        UPPER(input_name), 
+        service.valid_bank_card_number(input_number), 
+        input_user_email
+    );
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE p2p.create_payment(VARCHAR(50), VARCHAR(50), VARCHAR(16), service.valid_email) 
+IS 'Добавление платежного способа';
+
+
+CREATE OR REPLACE PROCEDURE p2p.create_review(
+    input_sentiment VARCHAR(8),
+    input_text_review TEXT,
+    input_user_on service.valid_email,
+    input_user_from service.valid_email
+    ) AS $$
+    INSERT INTO p2p.reviews(sentiment, text_review, fk_user_on, fk_user_from)
+    VALUES(input_sentiment, input_text_review, input_user_on, input_user_from);
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE p2p.create_review(
+    VARCHAR(8), TEXT, service.valid_email, service.valid_email
+) IS 'Добавление отзыва о пользователе';
+
+
+CREATE OR REPLACE PROCEDURE p2p.create_offer(
+    input_action_type service.valid_action_type,
+    input_currency VARCHAR(20),
+    input_quantity NUMERIC,
+    input_limit_min NUMERIC,
+    input_limit_max NUMERIC,
+    input_comment TEXT,
+    input_offer_status VARCHAR(6),
+    input_user_creator service.valid_email
+    ) AS $$
+    INSERT INTO p2p.offers(
+        action_type, currency, quantity, limit_min, 
+        limit_max, comment, offer_status, fk_user_creator
+    )
+    VALUES(
+        input_action_type, input_currency, input_quantity, input_limit_min, 
+        input_limit_max, input_comment, input_offer_status, input_user_creator
+    )
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE p2p.create_offer(
+    service.valid_action_type, VARCHAR(20), NUMERIC, 
+    NUMERIC, NUMERIC, TEXT, VARCHAR(6), service.valid_email
+) IS 'Создание предложения';
+
+
+CREATE OR REPLACE PROCEDURE p2p.deal(
+    input_deal_status VARCHAR(8),
+    input_offer_id BIGINT,
+    input_user_merchant service.valid_email,
+    input_user_recipient service.valid_email
+    ) AS $$
+    INSERT INTO p2p.deals(deal_status, fk_offer_id, fk_user_merchant, fk_user_recipient)
+    VALUES(input_deal_status, input_offer_id, input_user_merchant, input_user_recipient);
+$$ LANGUAGE sql;
+COMMENT ON PROCEDURE p2p.deal(VARCHAR(8), BIGINT, service.valid_email, service.valid_email)
+IS 'Создание сделки';
 
 
 CREATE OR REPLACE PROCEDURE trading.create_transaction(
@@ -246,7 +400,8 @@ CREATE OR REPLACE PROCEDURE trading.create_transaction(
     INSERT INTO trading.transactions(action_type, quantity, fk_portfolio_id, fk_currency_symbol)
     VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_symbol);
 $$ LANGUAGE sql;
-COMMENT ON PROCEDURE trading.create_transaction(VARCHAR(4), NUMERIC, INT, VARCHAR(20)) IS 'Создание транзакции';
+COMMENT ON PROCEDURE trading.create_transaction(VARCHAR(4), NUMERIC, INT, VARCHAR(20)) 
+IS 'Создание транзакции';
 
 
 --
@@ -262,7 +417,8 @@ RETURNS NUMERIC AS $$
     ORDER BY t_time DESC 
     LIMIT 1;
 $$ LANGUAGE sql VOLATILE;
-COMMENT ON FUNCTION market.get_price(VARCHAR(20))  IS 'Получение последней котировки определенного тикера';
+COMMENT ON FUNCTION market.get_price(VARCHAR(20)) 
+IS 'Получение последней котировки определенного тикера';
 
 
 CREATE OR REPLACE FUNCTION market.get_price_with_time(
@@ -275,7 +431,8 @@ CREATE OR REPLACE FUNCTION market.get_price_with_time(
     ORDER BY ABS(EXTRACT(EPOCH FROM (t_time - input_time)))
     LIMIT 1
 $$ LANGUAGE sql IMMUTABLE;
-COMMENT ON FUNCTION market.get_price_with_time(VARCHAR(20), TIMESTAMPTZ)  IS 'Получение последней котировки определенного тикера';
+COMMENT ON FUNCTION market.get_price_with_time(VARCHAR(20), TIMESTAMPTZ) 
+IS 'Получение последней котировки определенного тикера';
 
 
 CREATE OR REPLACE FUNCTION profile.get_portfolios(input_user_email service.valid_email) 
@@ -284,7 +441,8 @@ RETURNS TABLE(title VARCHAR(200)) AS $$
     FROM profile.portfolios p
     WHERE fk_user_email = input_user_email;
 $$ LANGUAGE sql STABLE;
-COMMENT ON FUNCTION profile.get_portfolios(service.valid_email) IS 'Вывод списка портфелей определенного пользователя';
+COMMENT ON FUNCTION profile.get_portfolios(service.valid_email) 
+IS 'Вывод списка портфелей определенного пользователя';
 
 
 CREATE OR REPLACE FUNCTION trading.get_value_transaction(input_transaction_id UUID) 
@@ -302,7 +460,8 @@ BEGIN
     RETURN qty_transaction;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
-COMMENT ON FUNCTION trading.get_value_transaction(UUID) IS 'Расчет объема транзакции в usdt';
+COMMENT ON FUNCTION trading.get_value_transaction(UUID) 
+IS 'Расчет объема транзакции в usdt';
 
 
 CREATE OR REPLACE FUNCTION market.get_balance_portfolio(input_portfolio_id INT)
@@ -322,7 +481,8 @@ BEGIN
     RETURN total_quantity;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
-COMMENT ON FUNCTION market.get_balance_portfolio(INT) IS 'Вывод баланса портфеля в usdt';
+COMMENT ON FUNCTION market.get_balance_portfolio(INT) 
+IS 'Вывод баланса портфеля в usdt';
 
 
 CREATE OR REPLACE FUNCTION market.get_balance_ticker_portfolio(input_portfolio_id INT) 
@@ -340,7 +500,8 @@ RETURNS TABLE(symbol VARCHAR(20), qty_currency NUMERIC, usdt_qty_currency NUMERI
     WHERE t.fk_portfolio_id = input_portfolio_id
     GROUP BY fk_currency_symbol;
 $$ LANGUAGE sql VOLATILE;
-COMMENT ON FUNCTION market.get_balance_ticker_portfolio(INT)  IS 'Вывод криптовалют, их количества и балансов в портфеле';
+COMMENT ON FUNCTION market.get_balance_ticker_portfolio(INT) 
+IS 'Вывод криптовалют, их количества и балансов в портфеле';
 
 
 CREATE OR REPLACE FUNCTION market.get_total_balance_user(input_user_email service.valid_email) 
@@ -359,7 +520,8 @@ BEGIN
     RETURN total_balance;
 END;
 $$ LANGUAGE plpgsql VOLATILE;
-COMMENT ON FUNCTION market.get_total_balance_user(service.valid_email) IS 'Вывод совокупного баланса пользователя';
+COMMENT ON FUNCTION market.get_total_balance_user(service.valid_email) 
+IS 'Вывод совокупного баланса пользователя';
 
 
 --
@@ -379,7 +541,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER tgr_print_size_transactions
 AFTER INSERT ON trading.transactions
 FOR EACH ROW EXECUTE FUNCTION trading.print_size_transactions();
-COMMENT ON TRIGGER tgr_print_size_transactions ON trading.transactions IS 'Печать размера таблицы';
+COMMENT ON TRIGGER tgr_print_size_transactions ON trading.transactions 
+IS 'Печать размера таблицы';
 
 
 --
