@@ -256,6 +256,11 @@ FROM pg_hba_file_rules;
 `sudo nano /etc/postgresql/14/main/pg_hba.conf`
 
 
+### Изменение файла pg_hba.conf и мгновенная запись
+
+`sudo sed -i '1s/^/local all dbuser md5\n/' /etc/postgresql/12/prod/pg_hba.conf`
+
+
 ### Информация о процессе по его pid
 
 ```sql

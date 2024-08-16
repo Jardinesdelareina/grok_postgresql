@@ -139,8 +139,8 @@ CREATE TABLE p2p.offers
     action_type service.valid_action_type NOT NULL,
     currency VARCHAR(20) CHECK (currency IN ('usdt', 'btc', 'eth', 'xrp')) NOT NULL,
     quantity NUMERIC NOT NULL,
-    limit_min NUMERIC NOT NULL,
-    limit_max NUMERIC NOT NULL,
+    limit_min NUMERIC DEFAULT 0,
+    limit_max NUMERIC DEFAULT quantity,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     comment TEXT,
     offer_status VARCHAR(6) CHECK (offer_status IN ('ACTIVE', 'INACTIVE')) DEFAULT 'ACTIVE',
@@ -189,7 +189,7 @@ IS 'Генерация случайного целочисленного зна�
 
 
 CREATE OR REPLACE FUNCTION service.count_after_comma(num NUMERIC)
-RETURNS INTEGER AS $$
+RETURNS INT AS $$
 DECLARE
     num_str TEXT := num::TEXT;
     num_len INT := LENGTH(num_str);
@@ -271,7 +271,7 @@ IS 'Создание портфеля';
 
 CREATE OR REPLACE FUNCTION service.sum_of_digits(num INT) RETURNS INT AS $$
 DECLARE
-    sum INTEGER := 0;
+    sum INT := 0;
 BEGIN
     WHILE num > 0 LOOP
         sum := sum + num % 10;
@@ -287,8 +287,8 @@ CREATE OR REPLACE FUNCTION service.valid_bank_card_number(card_number VARCHAR)
 RETURNS VARCHAR AS $$
 DECLARE
     card_number_digits INT[];
-    total_sum INTEGER := 0;
-    alternate_sum INTEGER := 0;
+    total_sum INT := 0;
+    alternate_sum INT := 0;
 BEGIN
     -- Проверка, что номер карты состоит только из цифр
     IF card_number ~ '^\d+$' THEN
