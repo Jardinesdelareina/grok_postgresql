@@ -139,8 +139,6 @@ CREATE TABLE p2p.offers
     action_type service.valid_action_type DEFAULT 'BUY',
     currency VARCHAR(4) CHECK (currency IN ('usdt', 'btc', 'eth', 'xrp')) NOT NULL,
     quantity NUMERIC NOT NULL,
-    limit_min NUMERIC CHECK (limit_min < quantity) DEFAULT 0,
-    limit_max NUMERIC CHECK (limit_max <= quantity),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     comment TEXT,
     offer_status VARCHAR(16) CHECK (offer_status IN (
@@ -361,22 +359,18 @@ CREATE OR REPLACE PROCEDURE p2p.create_offer(
     input_action_type service.valid_action_type,
     input_currency VARCHAR(4),
     input_quantity NUMERIC,
-    input_limit_min NUMERIC,
-    input_limit_max NUMERIC,
     input_comment TEXT,
     input_user_creator service.valid_email
     ) AS $$
     INSERT INTO p2p.offers(
-        action_type, currency, quantity, limit_min, limit_max, comment, fk_user_creator
+        action_type, currency, quantity, comment, fk_user_creator
     )
     VALUES(
-        input_action_type, input_currency, input_quantity, input_limit_min, 
-        input_limit_min, input_comment, input_user_creator
+        input_action_type, input_currency, input_quantity, input_comment, input_user_creator
     );
 $$ LANGUAGE sql;
 COMMENT ON PROCEDURE p2p.create_offer(
-    service.valid_action_type, VARCHAR(4), NUMERIC, 
-    NUMERIC, NUMERIC, TEXT, service.valid_email
+    service.valid_action_type, VARCHAR(4), NUMERIC, TEXT, service.valid_email
 ) IS 'Создание предложения';
 
 
@@ -428,11 +422,6 @@ CREATE OR REPLACE PROCEDURE p2p.deal_payment(
         FROM p2p.deals
         WHERE p2p.deals.id = input_deal_id
     )
-    WHERE offers.id = input_offer_id;
-
-    -- Уменьшение limit_max до уровня offer.quantity
-    UPDATE p2p.offers
-    SET limit_max = p2p.offers.quantity
     WHERE offers.id = input_offer_id;
     
     -- Изменение статуса deal
@@ -598,40 +587,21 @@ COMMENT ON TRIGGER trg_print_size_transactions ON trading.transactions
 IS 'Печать размера таблицы';
 
 
-CREATE OR REPLACE FUNCTION p2p.set_limit_max_default()
+CREATE OR REPLACE FUNCTION p2p.check_deal_quantity()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.limit_max IS NULL THEN
-        NEW.limit_max := NEW.quantity;
+    IF NEW.quantity > (SELECT quantity FROM p2p.offers WHERE id = NEW.fk_offer_id) THEN
+        RAISE EXCEPTION 'Превышен лимит предложения';
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_set_limit_max
-BEFORE INSERT OR UPDATE ON p2p.offers
-FOR EACH ROW EXECUTE FUNCTION p2p.set_limit_max_default();
-COMMENT ON TRIGGER trg_set_limit_max ON p2p.offers
-IS 'Установка limit_max из таблицы p2p.offers по-умолчанию';
-
-
-CREATE OR REPLACE FUNCTION p2p.set_limit_min()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.quantity < NEW.limit_min THEN
-        UPDATE p2p.offers
-        SET limit_min = NEW.quantity;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_set_limit_min
-BEFORE INSERT OR UPDATE ON p2p.offers
-FOR EACH ROW EXECUTE FUNCTION p2p.set_limit_min();
-COMMENT ON TRIGGER trg_set_limit_min ON p2p.offers
-IS 'Динамическое изменение limit_min из таблицы p2p.offers';
-
+CREATE TRIGGER trg_check_deal_quantity
+BEFORE INSERT ON p2p.deals
+FOR EACH ROW EXECUTE FUNCTION check_deal_quantity();
+COMMENT ON TRIGGER trg_check_deal_quantity ON p2p.deals
+IS 'Контроль превышения предложения';
 
 
 CREATE OR REPLACE FUNCTION p2p.update_offer_status()
@@ -641,9 +611,12 @@ BEGIN
         UPDATE p2p.offers
         SET offer_status = 'AWAITING PAYMENT'
         WHERE id = NEW.fk_offer_id;
-    ELSIF NEW.deal_status = 'PAYED' AND NEW.quantity = 0 THEN
+    ELSIF NEW.deal_status = 'PAYED' THEN
         UPDATE p2p.offers
-        SET offer_status = 'CLOSED'
+        SET offer_status = CASE 
+            WHEN (SELECT quantity FROM p2p.offers WHERE id = NEW.fk_offer_id) = 0 THEN 'CLOSED'
+            ELSE 'ACTIVE'
+            END
         WHERE id = NEW.fk_offer_id;
     ELSIF NEW.deal_status = 'PAYED' AND NEW.quantity > 0 OR NEW.deal_status = 'CANCELLED' THEN
         UPDATE p2p.offers
@@ -655,14 +628,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_update_offer_status
-BEFORE UPDATE OF deal_status ON p2p.deals
-FOR EACH ROW
-EXECUTE FUNCTION update_offer_status();
-COMMENT ON TRIGGER trg_set_limit_max ON p2p.offers
+BEFORE UPDATE ON p2p.deals
+FOR EACH ROW EXECUTE FUNCTION p2p.update_offer_status();
+COMMENT ON TRIGGER trg_update_offer_status ON p2p.deals
 IS 'Динамическое изменение limit_min из таблицы p2p.offers';
 
 
-CREATE OR REPLACE FUNCTION p2p.check_deal_status()
+CREATE OR REPLACE FUNCTION p2p.check_deal_time_status()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.deal_status = 'AWAIT' AND NOW() > NEW.created_at + INTERVAL '15 minutes' THEN
@@ -674,11 +646,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_update_deal_status
+CREATE TRIGGER trg_check_deal_time_status
 BEFORE UPDATE ON p2p.deals
-FOR EACH ROW
-EXECUTE FUNCTION check_deal_status();
-COMMENT ON TRIGGER trg_update_deal_status ON p2p.deals
+FOR EACH ROW EXECUTE FUNCTION p2p.check_deal_time_status();
+COMMENT ON TRIGGER trg_check_deal_time_status ON p2p.deals
 IS 'Установление лимитов на время существования сделки';
 
 
