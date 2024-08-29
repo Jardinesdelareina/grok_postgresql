@@ -307,7 +307,7 @@ WHERE customer_id = ANY(SELECT customer_id
     * `ADD COLUMN column_name data_type`  изменить колонку (с типом данных)
     * `RENAME TO new_table_name`     переименовать таблицу
     * `RENAME old_column_name TO new_column_name`   переименовать колонку
-    * `ALTER COLUMN column_name SET DAtA TYPE data_type`    задать новый тип данных для колонки
+    * `ALTER COLUMN column_name SET DATA TYPE data_type`    задать новый тип данных для колонки
 
 `DROP TABLE table_name`    удалить таблицу
 

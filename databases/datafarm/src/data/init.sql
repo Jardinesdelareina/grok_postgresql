@@ -133,6 +133,8 @@ CREATE TABLE p2p.offers
     action_type service.valid_action_type DEFAULT 'BUY',
     currency VARCHAR(4) CHECK (currency IN ('usdt', 'btc', 'eth', 'xrp')) NOT NULL,
     quantity NUMERIC NOT NULL,
+    limit_min NUMERIC DEFAULT 0,
+    limit_max NUMERIC,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     comment TEXT,
     offer_status VARCHAR(16) CHECK (offer_status IN (
@@ -365,14 +367,17 @@ CREATE OR REPLACE PROCEDURE p2p.create_offer(
     input_action_type service.valid_action_type,
     input_currency VARCHAR(4),
     input_quantity NUMERIC,
+    input_limit_min NUMERIC,
+    input_limit_max NUMERIC,
     input_comment TEXT,
     input_user_creator service.valid_email
     ) AS $$
     INSERT INTO p2p.offers(
-        action_type, currency, quantity, comment, fk_user_creator
+        action_type, currency, quantity, limit_min, limit_max, comment, fk_user_creator
     )
     VALUES(
-        input_action_type, input_currency, input_quantity, input_comment, input_user_creator
+        input_action_type, input_currency, input_quantity, input_limit_min, 
+        input_limit_max, input_comment, input_user_creator
     );
 $$ LANGUAGE sql;
 
@@ -573,6 +578,28 @@ AFTER INSERT ON trading.transactions
 FOR EACH ROW EXECUTE FUNCTION trading.print_size_transactions();
 
 
+CREATE OR REPLACE FUNCTION service.set_default_limit_offer()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.limit_min IS NULL THEN
+        UPDATE p2p.offers
+        SET limit_min = 0
+        WHERE id = NEW.id;
+    END IF;
+    IF NEW.limit_max IS NULL THEN
+        UPDATE p2p.offers
+        SET limit_max = quantity
+        WHERE id = NEW.id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_default_limit_offer
+AFTER INSERT ON p2p.offers
+FOR EACH ROW EXECUTE FUNCTION service.set_default_limit_offer();
+
+
 -- Контроль превышения предложения в p2p-сделках
 CREATE OR REPLACE FUNCTION p2p.check_deal_quantity()
 RETURNS TRIGGER AS $$
@@ -599,10 +626,9 @@ BEGIN
         WHERE id = NEW.fk_offer_id;
     ELSIF NEW.deal_status = 'PAYED' THEN
         UPDATE p2p.offers
-        SET offer_status = CASE 
-            WHEN (SELECT quantity FROM p2p.offers WHERE id = NEW.fk_offer_id) = 0 THEN 'CLOSED'
-            ELSE 'ACTIVE'
-            END
+        SET offer_status = CASE WHEN (
+            SELECT quantity FROM p2p.offers WHERE id = NEW.fk_offer_id
+        ) = 0 THEN 'CLOSED' ELSE 'ACTIVE'END
         WHERE id = NEW.fk_offer_id;
     ELSIF NEW.deal_status = 'PAYED' AND NEW.quantity > 0 OR NEW.deal_status = 'CANCELLED' THEN
         UPDATE p2p.offers
@@ -616,24 +642,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_update_offer_status
 BEFORE UPDATE ON p2p.deals
 FOR EACH ROW EXECUTE FUNCTION p2p.update_offer_status();
-
-
--- Установление лимитов на время существования сделки
-CREATE OR REPLACE FUNCTION p2p.check_deal_time_status()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF deal_status = 'AWAIT' AND NOW() > (NEW.created_at + INTERVAL '5 minutes') THEN
-        UPDATE p2p.deals 
-        SET deal_status = 'CANCELLED' 
-        WHERE id = NEW.id;
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_check_deal_time_status
-BEFORE UPDATE ON p2p.deals
-FOR EACH ROW EXECUTE FUNCTION p2p.check_deal_time_status();
 
 
 --
