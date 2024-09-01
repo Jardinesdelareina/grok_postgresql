@@ -400,6 +400,18 @@ CREATE ROLE bob LOGIN;
 `REASSIGN OWNED BY alice TO bob;`
 
 
+Расположение файла pg_hba.conf:
+```sql
+SHOW hba_file;
+```
+
+Табличное представление файла `pg_hba.conf`:
+```sql
+SELECT type, database, user_name, address, auth_method
+FROM pg_hba_file_rules();
+```
+
+
 ##### Примеры использования управления привилегиями
 
 `CREATE ROLE new_user WITH LOGIN PASSWORD 'new_password' VALID UNTIL '2022-12-31';`      создание пользователя и пароля и установление срока учетной записи
