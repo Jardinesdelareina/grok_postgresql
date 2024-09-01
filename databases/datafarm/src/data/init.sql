@@ -241,7 +241,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE PROCEDURE profile.create_user(
     input_email service.valid_email, 
     input_password VARCHAR(100)
-    ) AS $$
+) AS $$
     INSERT INTO profile.users(email, password)
     VALUES(input_email, service.crypt(input_password, service.gen_salt('md5')));
 $$ LANGUAGE sql;
@@ -251,7 +251,7 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE profile.create_portfolio(
     input_title VARCHAR(200), 
     input_user_email service.valid_email
-    ) AS $$
+) AS $$
     INSERT INTO profile.portfolios(title, fk_user_email)
     VALUES(input_title, input_user_email);
 $$ LANGUAGE sql;
@@ -261,7 +261,7 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE profile.update_portfolio(
     input_id INT,
     input_title VARCHAR(200)
-    ) AS $$
+) AS $$
     UPDATE profile.portfolios
     SET title = input_title
     WHERE id = input_id;
@@ -271,7 +271,7 @@ $$ LANGUAGE sql;
 -- Удаление портфеля
 CREATE OR REPLACE PROCEDURE profile.delete_portfolio(
     input_id INT
-    ) AS $$
+) AS $$
     DELETE FROM profile.portfolios WHERE id = input_id;
 $$ LANGUAGE sql;
 
@@ -339,7 +339,7 @@ CREATE OR REPLACE PROCEDURE p2p.create_payment(
     input_name VARCHAR(50),
     input_number VARCHAR(16),
     input_user_email service.valid_email
-    ) AS $$
+) AS $$
     INSERT INTO p2p.payments(fk_emitent, name, number, fk_user_email)
     VALUES(
         input_emitent, 
@@ -356,7 +356,7 @@ CREATE OR REPLACE PROCEDURE p2p.create_review(
     input_text_review TEXT,
     input_user_on service.valid_email,
     input_user_from service.valid_email
-    ) AS $$
+) AS $$
     INSERT INTO p2p.reviews(sentiment, text_review, fk_user_on, fk_user_from)
     VALUES(input_sentiment, input_text_review, input_user_on, input_user_from);
 $$ LANGUAGE sql;
@@ -371,7 +371,7 @@ CREATE OR REPLACE PROCEDURE p2p.create_offer(
     input_limit_max NUMERIC,
     input_comment TEXT,
     input_user_creator service.valid_email
-    ) AS $$
+) AS $$
     INSERT INTO p2p.offers(
         action_type, currency, quantity, limit_min, limit_max, comment, fk_user_creator
     )
@@ -387,7 +387,7 @@ CREATE OR REPLACE PROCEDURE p2p.create_deal(
     input_quantity NUMERIC,
     input_offer_id BIGINT,
     input_user_contragent service.valid_email
-    ) AS $$
+) AS $$
     INSERT INTO p2p.deals(quantity, fk_offer_id, fk_user_contragent)
     VALUES(input_quantity, input_offer_id, input_user_contragent);
 $$ LANGUAGE sql;
@@ -397,7 +397,7 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE p2p.update_status_offer(
     input_id BIGINT,
     input_status VARCHAR(16)
-    ) AS $$
+) AS $$
     UPDATE p2p.offers
     SET offer_status = input_status
     WHERE id = input_id;
@@ -408,7 +408,7 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE p2p.update_status_deal(
     input_id UUID,
     input_status VARCHAR(9)
-    ) AS $$
+) AS $$
     UPDATE p2p.deals
     SET deal_status = input_status
     WHERE id = input_id;
@@ -419,7 +419,7 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE p2p.deal_payment(
     input_offer_id BIGINT, 
     input_deal_id UUID
-    ) AS $$
+) AS $$
 
     -- Разница между offers.quantity и deal.quantity (процесс совершения сделки)
     UPDATE p2p.offers
@@ -437,13 +437,24 @@ CREATE OR REPLACE PROCEDURE p2p.deal_payment(
 $$ LANGUAGE sql;
 
 
+-- Смена статуса сделок спустя 15 минут бездействия
+CREATE OR REPLACE PROCEDURE p2p.check_deal_time(
+    input_deal_id UUID
+) AS $$
+    UPDATE p2p.deals
+    SET deal_status = 'CANCELLED'
+    WHERE id = input_deal_id AND
+        ((EXTRACT(EPOCH FROM NOW()) - EXTRACT(EPOCH FROM p2p.deals.created_at)) / 60) >= 15;
+$$ LANGUAGE sql;
+
+
 -- Создание транзакции
 CREATE OR REPLACE PROCEDURE trading.create_transaction(
     input_action_type VARCHAR(4),
     input_quantity NUMERIC,
     input_portfolio_id INT,
     input_currency_symbol VARCHAR(20)
-    ) AS $$
+) AS $$
     INSERT INTO trading.transactions(action_type, quantity, fk_portfolio_id, fk_currency_symbol)
     VALUES(input_action_type, input_quantity, input_portfolio_id, input_currency_symbol);
 $$ LANGUAGE sql;
@@ -578,25 +589,26 @@ AFTER INSERT ON trading.transactions
 FOR EACH ROW EXECUTE FUNCTION trading.print_size_transactions();
 
 
+-- Установка значений лимитов в p2p-сделках по-умолчанию
 CREATE OR REPLACE FUNCTION service.set_default_limit_offer()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.limit_min IS NULL THEN
-        UPDATE p2p.offers
-        SET limit_min = 0
-        WHERE id = NEW.id;
+        NEW.limit_min := 0;
+    ELSIF NEW.limit_min > NEW.quantity THEN
+        NEW.limit_min := NEW.quantity;
     END IF;
     IF NEW.limit_max IS NULL THEN
-        UPDATE p2p.offers
-        SET limit_max = quantity
-        WHERE id = NEW.id;
-    END IF;
+        NEW.limit_max := NEW.quantity;
+    ELSIF NEW.limit_max > NEW.quantity THEN
+        NEW.limit_max := NEW.quantity;
+END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_set_default_limit_offer
-AFTER INSERT ON p2p.offers
+BEFORE INSERT OR UPDATE ON p2p.offers
 FOR EACH ROW EXECUTE FUNCTION service.set_default_limit_offer();
 
 
