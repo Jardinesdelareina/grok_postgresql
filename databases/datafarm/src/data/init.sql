@@ -77,6 +77,7 @@ CREATE TABLE profile.portfolios
 (
     id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     title VARCHAR(128) NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
     fk_user_email service.valid_email REFERENCES profile.users(email)
 );
 
@@ -272,7 +273,9 @@ $$ LANGUAGE sql;
 CREATE OR REPLACE PROCEDURE profile.delete_portfolio(
     input_id INT
 ) AS $$
-    DELETE FROM profile.portfolios WHERE id = input_id;
+    UPDATE profile.portfolios
+    SET is_deleted = TRUE
+    WHERE id = input_id;
 $$ LANGUAGE sql;
 
 
@@ -491,9 +494,9 @@ $$ LANGUAGE sql IMMUTABLE;
 
 -- Вывод списка портфелей определенного пользователя
 PREPARE get_portfolios (service.valid_email) AS
-SELECT p.title
-FROM profile.portfolios p
-WHERE fk_user_email = $1;
+SELECT title
+FROM profile.portfolios
+WHERE fk_user_email = $1 AND is_deleted = FALSE;
 
 
 -- Расчет объема транзакции в usdt
@@ -559,7 +562,7 @@ BEGIN
     FOR portfolio_id IN (
         SELECT id 
         FROM profile.portfolios 
-        WHERE fk_user_email = input_user_email
+        WHERE fk_user_email = input_user_email AND is_deleted = FALSE
     ) 
     LOOP
         total_balance := total_balance + market.get_balance_portfolio(portfolio_id);
