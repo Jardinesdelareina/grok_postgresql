@@ -6,6 +6,11 @@ CREATE DATABASE datafarm;
 \connect datafarm
 
 
+--
+-- INIT SCHEMAS
+--
+
+
 CREATE SCHEMA market;
 CREATE SCHEMA p2p;
 CREATE SCHEMA profile;
@@ -13,6 +18,33 @@ CREATE SCHEMA trading;
 CREATE SCHEMA service;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA service;
+
+
+--
+-- ROLES
+--
+
+
+DO $$
+DECLARE
+    i RECORD;
+BEGIN
+    FOR i IN (
+        SELECT rolname 
+        FROM pg_roles 
+        WHERE rolname NOT LIKE 'pg_%' AND rolname <> 'postgres'
+    ) LOOP
+        EXECUTE 'DROP ROLE ' || i.rolname;
+    END LOOP;
+END $$;
+
+
+CREATE ROLE dba WITH LOGIN PASSWORD '1234' SUPERUSER;
+CREATE ROLE dev_group WITH NOLOGIN CREATEROLE;
+CREATE ROLE dev_lead WITH LOGIN PASSWORD '1234' IN ROLE dev_group;
+CREATE ROLE dev_1 WITH LOGIN PASSWORD '1234' IN ROLE dev_group;
+CREATE ROLE dev_2 WITH LOGIN PASSWORD '1234' IN ROLE dev_group;
+CREATE ROLE analyst WITH LOGIN PASSWORD '1234'; 
 
 
 --

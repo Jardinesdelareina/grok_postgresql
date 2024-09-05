@@ -323,3 +323,11 @@ SELECT rolname FROM pg_roles;
 ```sql
 SELECT * FROM pg_stat_activity WHERE state = 'active';
 ```
+
+
+### Список объектов, которые завися от роли
+```sql
+SELECT * 
+FROM information_schema.table_privileges
+WHERE grantee = 'имя_роли';
+```
