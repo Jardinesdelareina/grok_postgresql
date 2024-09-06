@@ -298,6 +298,26 @@ WHERE customer_id = ANY(SELECT customer_id
                         WHERE quantity > 40)
 ```
 
+### MERGE
+
+Оператор `MERGE` позволяет выполнить операцию вставки (INSERT), обновления (UPDATE) или удаления (DELETE) записей в таблице на основании условий. Этот оператор комбинирует функционал INSERT и UPDATE.
+
+```sql
+MERGE INTO target_table USING source_table ON merge_condition
+WHEN MATCHED THEN
+UPDATE SET column1 = value1, column2 = value2
+WHEN NOT MATCHED THEN
+INSERT (column1, column2) VALUES (value1, value2);
+```
+
+`target_table` - целевая таблица, в которой нужно выполнить операцию
+`source_table` - исходная таблица, из которой берутся данные
+`merge_condition` - условие для сопоставления строк в целевой и исходной таблицах
+`column1`, `column2` - столбцы, которые нужно обновить или вставить
+`value1`, `value2` - значения, которые нужно обновить или вставить
+
+Оператор MERGE позволяет сократить код и выполнить операции вставки, обновления и удаления данных в более эффективном и удобном виде. Он особенно полезен в случаях, когда требуется одновременно вставить новые данные и обновить существующие в одной операции.
+
 
 ### DDL (Data Difinition Language)
 
