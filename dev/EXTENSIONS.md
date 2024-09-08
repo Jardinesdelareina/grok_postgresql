@@ -10,20 +10,25 @@
 `mkdir fib`
 
 Создание управляющего файла с настройками:
-`cat >fib/fib.control <<EOF
+```
+cat >fib/fib.control <<EOF
 default_version = '1.0'
 relocatable = true
 encoding = UTF8
 comment = 'Числа Фибоначчи'
-EOF`
+EOF
+```
 
 `default_version`   определяет версию по умолчанию, без этого параметра версию придется указывать явно;
+
 `relocatable`    говорит о том, что расширение можно перемещать из схемы в схему;
+
 `encoding`  требуется, если используются символы, отличные от ASCII;
+
 `comment`   определяет комментарии к расширению.
 
 Создание файла с расширением:
-`cat >fib/fib--1.0.sql <<'EOF'
+```cat >fib/fib--1.0.sql <<'EOF'
 \echo Use "CREATE EXTENSION fib" to load this file. \quit
 CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
     DECLARE
@@ -42,20 +47,23 @@ CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
 		RETURN i;
     END;     
 $$ LANGUAGE plpgsql STABLE STRICT;
-EOF`
+EOF
+```
 
 Чтобы PostgreSQL нашел созданные файлы, они должны оказаться в каталоге SHAREDIR/extension. Значение SHAREDIR можно узнать так:
 `pg_config --sharedir`
 
 Создание файла для утилиты make:
-`cat >fib/Makefile <<'EOF'
+```
+cat >fib/Makefile <<'EOF'
 EXTENSION = fib
 DATA = fib--1.0.sql
 
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
-EOF`
+EOF
+```
 
 Выполнение make install в каталог расширения:
 `sudo make install -C fib`
@@ -78,19 +86,23 @@ SET search_path TO fib, public;
 ALTER EXTENSION fib SET SCHEMA public;
 ```
 
+
 ### Обновления
+
 Обновление версии расширения выполняется командой `ALTER EXTENSION UPDATE`. При этом должен существовать скрипт обновления 'filename--old-version--new-version.sql', содержащий необходимые для обновления команды.
 
 В файле `fib.control` при смене версии нужно изменить параметр `default_version`:
-`cat >fib/fib.control <<EOF
+```cat >fib/fib.control <<EOF
 default_version = '1.1'
 relocatable = true
 encoding = UTF8
 comment = 'Единицы измерения'
-EOF`
+EOF
+```
 
 Создание файла с командами для обновления:
-`cat >fib/fib--1.0--1.1.sql <<'EOF'
+```
+cat >fib/fib--1.0--1.1.sql <<'EOF'
 \echo Use "CREATE EXTENSION fib" to load this file. \quit
 CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
     DECLARE
@@ -112,25 +124,28 @@ CREATE OR REPLACE FUNCTION fib(x INTEGER) RETURNS INTEGER AS $$
     END;     
 $$ LANGUAGE plpgsql STABLE STRICT;
 EOF 
-`
+```
 
 Добавление в Makefile новый файл в список DATA:
-`cat >fib/Makefile <<'EOF'
+```cat >fib/Makefile <<'EOF'
 EXTENSION = fib
 DATA = fib--1.0.sql fib--1.0--1.1.sql
 
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
-EOF`
+EOF
+```
 
 Выполнение make install:
 `sudo make install -C fib`
 
 Вывод доступных версий расширения:
-`SELECT name, version, installed
+```sql
+SELECT name, version, installed
 FROM pg_available_extension_versions
-WHERE name = 'fib';`
+WHERE name = 'fib';
+```
 
 Обновление расширения:
 ```sql
