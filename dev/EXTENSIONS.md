@@ -158,3 +158,38 @@ SELECT name, default_version, installed_version
 FROM pg_available_extensions
 ORDER BY name;
 ```
+
+
+### Расширения на языке C
+
+1. Содержимое файла, обязатеьное для инициализации принадлежности к PostgreSQL:
+```c
+#include "postgres.h"
+#include "fmgr.h"
+
+PG_MODULE_MAGIC;             // Макрос, определяющий версию модуля для PostgreSQL
+PG_FUNCTION_INFO_V1(postgres_func);    // Макрос, определяющий соглашения о вызове функций C в PostgreSQL
+
+Datum postgresf_func(PG_FUNCTION_ARGS) 
+{
+    int32 arg_a = PG_GETARG_INT32(0);
+    int32 arg_b = PG_GETARG_INT32(1);
+    PG_RETURN_INT32(arg_a + arg_b);
+}
+```
+
+
+2. Компиляция файла:
+
+`gcc -fPIC -I /usr/include/postgresql/14/server -c postgres_func.c`
+
+`gcc -shared -o postgres_func.so postgres_func.o`
+
+
+3. Объявление функции:
+
+```sql
+CREATE OR REPLACE FUNCTION postgres_func(INT, INT) 
+RETURNS INT AS 'path/to/file_so', 'postgres_func'
+LANGUAGE C STRICT;
+```
