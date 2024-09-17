@@ -70,7 +70,7 @@ DECLARE
 BEGIN
     FOREACH i IN ARRAY symbol_list
     LOOP
-        INSERT INTO market.currencies(symbol) VALUES(CONCAT(i, 'usdt'));
+        INSERT INTO market.currencies(symbol) VALUES(UPPER(CONCAT(i, 'usdt')));
     END LOOP;
 END $$;
 
@@ -111,6 +111,37 @@ CREATE TABLE profile.portfolios
     title VARCHAR(128) NOT NULL,
     is_deleted BOOLEAN DEFAULT FALSE,
     fk_user_email service.valid_email REFERENCES profile.users(email)
+);
+
+
+-- Тикеры для p2p-торговли
+CREATE TABLE p2p.exchange_currencies
+(
+    ticker VARCHAR(6) PRIMARY KEY
+);
+
+
+-- Наполнение таблицы тикерами
+DO $$
+DECLARE
+    currency_list VARCHAR[] := ARRAY[
+        'btc', 'usdt' 
+    ];
+    i VARCHAR;
+BEGIN
+    FOREACH i IN ARRAY currency_list
+    LOOP
+        INSERT INTO p2p.exchange_currencies(ticker) VALUES(UPPER(i));
+    END LOOP;
+END $$;
+
+
+-- Счет для p2p-торговли
+CREATE TABLE p2p.wallets
+(
+    fk_user_owner service.valid_email REFERENCES profile.users(email),
+    fk_currency VARCHAR(6) REFERENCES p2p.exchange_currencies(ticker),
+    balance NUMERIC DEFAULT 0
 );
 
 
@@ -164,7 +195,6 @@ CREATE TABLE p2p.offers
 (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     action_type service.valid_action_type DEFAULT 'BUY',
-    currency VARCHAR(4) CHECK (currency IN ('usdt', 'btc', 'eth', 'xrp')) NOT NULL,
     quantity NUMERIC NOT NULL,
     limit_min NUMERIC DEFAULT 0,
     limit_max NUMERIC,
@@ -173,6 +203,7 @@ CREATE TABLE p2p.offers
     offer_status VARCHAR(16) CHECK (offer_status IN (
         'ACTIVE', 'AWAITING PAYMENT', 'CLOSED'
     )) DEFAULT 'ACTIVE',
+    fk_currency VARCHAR(6) REFERENCES p2p.exchange_currencies(ticker),
     fk_user_creator service.valid_email REFERENCES profile.users(email)
 );
 
@@ -408,7 +439,7 @@ CREATE OR REPLACE PROCEDURE p2p.create_offer(
     input_user_creator service.valid_email
 ) AS $$
     INSERT INTO p2p.offers(
-        action_type, currency, quantity, limit_min, limit_max, comment, fk_user_creator
+        action_type, fk_currency, quantity, limit_min, limit_max, comment, fk_user_creator
     )
     VALUES(
         input_action_type, input_currency, input_quantity, input_limit_min, 
@@ -455,7 +486,6 @@ CREATE OR REPLACE PROCEDURE p2p.deal_payment(
     input_offer_id BIGINT, 
     input_deal_id UUID
 ) AS $$
-
     -- Разница между offers.quantity и deal.quantity (процесс совершения сделки)
     UPDATE p2p.offers
     SET quantity = p2p.offers.quantity - (
@@ -468,8 +498,35 @@ CREATE OR REPLACE PROCEDURE p2p.deal_payment(
     -- Изменение статуса deal
     UPDATE p2p.deals
     SET deal_status = 'PAYED'
-    WHERE id = input_deal_id
+    WHERE id = input_deal_id;
 $$ LANGUAGE sql;
+
+
+-- Создание p2p-транзакции
+CREATE OR REPLACE PROCEDURE p2p.create_p2p_transaction(
+    input_user_creator service.valid_email,
+    input_user_contragent service.valid_email,
+    input_currency VARCHAR(6),
+    input_quantity NUMERIC
+) AS $$
+BEGIN
+    IF (SELECT balance 
+        FROM p2p.wallets
+        WHERE fk_currency = input_currency AND fk_user_owner = input_user_contragent
+    ) >= input_quantity THEN
+
+        UPDATE p2p.wallets
+        SET balance = balance - input_quantity
+        WHERE fk_user_owner = input_user_contragent AND fk_currency = input_currency;
+
+        UPDATE p2p.wallets
+        SET balance = balance + input_quantity
+        WHERE fk_user_owner = input_user_creator AND fk_currency = input_currency;
+    ELSE
+        RAISE NOTICE 'Недостаточно средств на счету';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Смена статуса сделок спустя 15 минут бездействия
