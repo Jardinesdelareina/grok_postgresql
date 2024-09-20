@@ -8,10 +8,6 @@ CALL profile.create_user('mueros@mail.ru', '1234');
 CALL p2p.create_wallet('fueros@mail.ru', 'BTC');
 CALL p2p.create_wallet('mueros@mail.ru', 'BTC');
 
-
-UPDATE p2p.wallets
-SET balance = 100
-WHERE fk_user_owner = 'fueros@mail.ru' AND fk_currency = 'BTC';
-
+UPDATE p2p.wallets SET balance = 100 WHERE fk_user_owner = 'fueros@mail.ru' AND fk_currency = 'BTC';
 
 CALL p2p.create_p2p_transaction('mueros@mail.ru', 'fueros@mail.ru', 'BTC', 50);

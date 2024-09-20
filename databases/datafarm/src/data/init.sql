@@ -526,8 +526,8 @@ $$ LANGUAGE sql;
 
 -- Создание p2p-транзакции
 CREATE OR REPLACE PROCEDURE p2p.create_p2p_transaction(
-    input_user_creator service.valid_email,
-    input_user_contragent service.valid_email,
+    input_user_creator service.valid_email,     -- Получатель
+    input_user_contragent service.valid_email,  -- Отправитель
     input_currency VARCHAR(6),
     input_quantity NUMERIC
 ) AS $$
