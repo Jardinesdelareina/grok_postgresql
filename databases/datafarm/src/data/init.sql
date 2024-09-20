@@ -141,6 +141,7 @@ CREATE TABLE p2p.wallets
 (
     fk_user_owner service.valid_email REFERENCES profile.users(email),
     fk_currency VARCHAR(6) REFERENCES p2p.exchange_currencies(ticker),
+    is_deleted BOOLEAN DEFAULT FALSE,
     balance NUMERIC DEFAULT 0
 );
 
@@ -397,6 +398,27 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+
+-- Создание счета
+CREATE OR REPLACE PROCEDURE p2p.create_wallet(
+    input_user_owner service.valid_email,
+    input_currency VARCHAR(6)
+) AS $$
+    INSERT INTO p2p.wallets(fk_user_owner, fk_currency)
+    VALUES(input_user_owner, input_currency);
+$$ LANGUAGE sql;
+
+
+-- Удаление счета
+CREATE OR REPLACE PROCEDURE p2p.delete_wallet(
+    input_user_owner service.valid_email,
+    input_currency VARCHAR(6)
+) AS $$
+    UPDATE p2p.wallets
+    SET is_deleted = TRUE
+    WHERE fk_user_owner = input_user_owner AND fk_currency = input_currency;
+$$ LANGUAGE sql;
 
 
 -- Добавление платежного способа

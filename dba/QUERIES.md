@@ -24,15 +24,15 @@ WHERE spcname<>'pg_global';
 Суммарный размер всех таблиц, суммарный размер всех индексов, общий суммарный размер схемы и суммарное количество строк во всех таблицах схемы.
 ```sql
 SELECT A.schemaname,
-       pg_size_pretty (SUM(pg_relation_size(C.oid))) as table, 
-       pg_size_pretty (SUM(pg_total_relation_size(C.oid)-pg_relation_size(C.oid))) as index, 
-       pg_size_pretty (SUM(pg_total_relation_size(C.oid))) as table_index,
+       pg_size_pretty(SUM(pg_relation_size(C.oid))) as table, 
+       pg_size_pretty(SUM(pg_total_relation_size(C.oid)-pg_relation_size(C.oid))) as index, 
+       pg_size_pretty(SUM(pg_total_relation_size(C.oid))) as table_index,
        SUM(n_live_tup)
 FROM pg_class C
 LEFT JOIN pg_namespace N ON (N.oid = C .relnamespace)
 INNER JOIN pg_stat_user_tables A ON C.relname = A.relname
 WHERE nspname NOT IN ('pg_catalog', 'information_schema')
-AND C .relkind <> 'i'
+AND C.relkind <> 'i'
 AND nspname !~ '^pg_toast'
 GROUP BY A.schemaname;
 ```
@@ -44,9 +44,9 @@ GROUP BY A.schemaname;
 ```sql
 SELECT schemaname,
        C.relname AS relation,
-       pg_size_pretty (pg_relation_size(C.oid)) as table,
-       pg_size_pretty (pg_total_relation_size (C.oid)-pg_relation_size(C.oid)) as index,
-       pg_size_pretty (pg_total_relation_size (C.oid)) as table_index,
+       pg_size_pretty(pg_relation_size(C.oid)) as table,
+       pg_size_pretty(pg_total_relation_size (C.oid)-pg_relation_size(C.oid)) as index,
+       pg_size_pretty(pg_total_relation_size (C.oid)) as table_index,
        n_live_tup
 FROM pg_class C
 LEFT JOIN pg_namespace N ON (N.oid = C .relnamespace)
@@ -98,13 +98,13 @@ SELECT pg_terminate_backend(PID_ID);
 
 ### Доля кэшированных данных в таблицах
 
-Какая доля каких таблиц закеширована (и насколько активно используются эти данные).
+Какая доля каких таблиц закеширована (и насколько активно используются эти данные). Модуль `pg_buffercache`.
 
 ```sql
 SELECT c.relname,
   count(*) blocks,
-  round( 100.0 * 8192 * count(*) / pg_table_size(c.oid) ) "% of rel",
-  round( 100.0 * 8192 * count(*) FILTER (WHERE b.usagecount > 3) / pg_table_size(c.oid) ) "% hot"
+  round(100.0 * 8192 * count(*) / pg_table_size(c.oid)) "% of rel",
+  round(100.0 * 8192 * count(*) FILTER (WHERE b.usagecount > 3) / pg_table_size(c.oid)) "% hot"
 FROM pg_buffercache b
   JOIN pg_class c ON pg_relation_filenode(c.oid) = b.relfilenode
 WHERE  b.reldatabase IN (
