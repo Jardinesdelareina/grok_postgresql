@@ -537,10 +537,12 @@ BEGIN
         WHERE fk_currency = input_currency AND fk_user_owner = input_user_contragent
     ) >= input_quantity THEN
 
+        -- Списание у отправителя
         UPDATE p2p.wallets
         SET balance = balance - input_quantity
         WHERE fk_user_owner = input_user_contragent AND fk_currency = input_currency;
 
+        -- Начисление получателю
         UPDATE p2p.wallets
         SET balance = balance + input_quantity
         WHERE fk_user_owner = input_user_creator AND fk_currency = input_currency;
