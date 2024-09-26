@@ -167,7 +167,7 @@ ORDER BY name;
 #include "postgres.h"
 #include "fmgr.h"
 
-PG_MODULE_MAGIC;             // Макрос, определяющий версию модуля для PostgreSQL
+PG_MODULE_MAGIC;                        // Макрос, определяющий версию модуля для PostgreSQL
 PG_FUNCTION_INFO_V1(postgres_func);    // Макрос, определяющий соглашения о вызове функций C в PostgreSQL
 
 Datum postgresf_func(PG_FUNCTION_ARGS) 
