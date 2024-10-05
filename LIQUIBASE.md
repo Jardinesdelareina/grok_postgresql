@@ -56,3 +56,15 @@ echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/liquibase-keyring.gpg] https
 ### Команды Liquibase
 
 `liquibase init project`    Инициализация проекта (команда init доступна только в версиях 4.7.0 и выше)
+
+`liquibase update`      Применить обновления к базе данных
+
+Расширенная команда upgrade с флагами доступа к базе данных:
+
+`liquibase --changeLogFile=changelog.xml --url=jdbc:postgresql://localhost:5432/dbname --username=username --password=password update`
+
+Где:
+* --changeLogFile - путь к файлу `changelog.xml` (источнику изменений)
+* --url - адрес базы данных 
+* --username - имя пользователя PostgreSQL
+* --password - пароль
