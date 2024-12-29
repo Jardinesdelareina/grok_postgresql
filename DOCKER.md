@@ -5,6 +5,17 @@
 </div>
 
 
+### Основные концепции Docker
+
+* Образ (Image): Это шаблон, из которого создаются контейнеры. Образ содержит все необходимые зависимости для приложения.
+
+* Контейнер (Container): Это экземпляр образа, который выполняется в изолированной среде. Контейнеры могут быть запущены, остановлены, удалены и перемещены.
+
+* Dockerfile: Это текстовый файл, содержащий инструкции для создания образа. В нем описываются все зависимости и команды, необходимые для настройки окружения.
+
+* Docker Hub: Это облачный реестр, где можно хранить и делиться образами. Вы можете загружать свои образы и загружать образы других пользователей.
+
+
 ### Установка Docker в Ubuntu 22.04
 
 Если Docker был установлен в ОС ранее, нужно произвести <b>удаление</b> всех конфликтующих пакетов:
@@ -43,7 +54,7 @@ sudo apt-get update
 `sudo docker run hello-world`   запуск образа `hello-world` (проверка, что установка Docker Engine прошла успешно)
 
 
-### Установка Docker Desktop
+#### Установка Docker Desktop
 
 1. [Загрузить](https://desktop.docker.com/linux/main/amd64/157355/docker-desktop-amd64.deb?utm_source=docker&utm_medium=webreferral&utm_campaign=docs-driven-download-linux-amd64&_gl=1*1oh7zxu*_gcl_au*NTM1NTMxNTY4LjE3MjExMzgyMTc.*_ga*MjgxNzE1NjM0LjE3MjExMzgxMTY.*_ga_XJWPQMJYHQ*MTcyMTEzODExNi4xLjEuMTcyMTE0MDcwNy4yNy4wLjA.) последнюю версию DEB-пакета;
 
@@ -52,6 +63,21 @@ sudo apt-get update
 sudo apt-get update
 sudo apt-get install ./docker-desktop-amd64.deb
 ```
+
+
+### Установка Docker в Windows 11
+
+
+`wsl --install`   установка WSL 2, по-умолчанию, установится WSL2 с GUI и Ubuntu
+
+Далее установка учетных данных в среде Linux (ввести логин и пароль)
+
+`sudo apt-get update`   обновление пакетов в Ubuntu
+
+`hostnamectl`   проверка версии дистрибутива
+
+
+Далее, нужно [скачать установочный файл с официального сайта](https://docs.docker.com/desktop/setup/install/windows-install/), установить Docker и перезагрузить компьютер. 
 
 
 ### Установка и настройка PostgreSQL в Docker
@@ -112,9 +138,31 @@ sudo apt-get install ./docker-desktop-amd64.deb
 
 ### Docker Compose
 
-`sudo apt install docker-compose`   установить docker-compose
+Docker Compose позволяет:
 
-Создается файл `docker-compose.yml` следующего содержания:
+* Определять многоконтейнерные приложения с помощью простого текстового файла (обычно docker-compose.yml).
+
+* Запускать все контейнеры с одной командой.
+
+* Легко управлять жизненным циклом контейнеров (запуск, остановка, удаление).
+
+* Настраивать сети и тома для взаимодействия между контейнерами.
+
+Docker Compose обычно устанавливается вместе с Docker Desktop на Windows и macOS. Для Linux может понадобиться установить его отдельно.
+
+`docker-compose --version`  проверить версию Docker Compose
+
+`sudo apt install docker-compose`   установить Docker Compose
+
+Файл `docker-compose.yml` используется для описания конфигурации приложения. Вот основные элементы, которые могут быть включены в этот файл:
+
+* version: Версия синтаксиса Compose.
+
+* services: Определяет контейнеры (сервисы), которые будут запущены.
+
+* networks: Определяет сети, используемые контейнерами.
+
+* volumes: Определяет тома для хранения данных.
 
 ```
 services:
