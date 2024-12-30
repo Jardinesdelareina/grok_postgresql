@@ -67,7 +67,6 @@ sudo apt-get install ./docker-desktop-amd64.deb
 
 ### Установка Docker в Windows 11
 
-
 `wsl --install`   установка WSL 2, по-умолчанию, установится WSL2 с GUI и Ubuntu
 
 Далее установка учетных данных в среде Linux (ввести логин и пароль)
@@ -98,24 +97,62 @@ sudo apt-get install ./docker-desktop-amd64.deb
 
 `sudo docker pull postgres`   получение из Docker Hub готового образа PostgreSQL
 
-За пределами жизненного цикла контейнера не остается каких-либо данных. Поэтому на файловой системе сервера необходимо создать каталог для хранения данных, которые будут появятся в процессе работы экземпляра PostgreSQL: `mkdir -p $HOME/docker/volumes/postgres`
 
-`sudo docker run --rm --name fueros_pg -e POSTGRES_PASSWORD=fueros -e POSTGRES_USER=fueros -e POSTGRES_DB=fueros -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data postgres`   запуск контейнера PostgreSQL
-* <b>--rm</b> организовывает автоматическое удаление файловой системы контейнера после его остановки
+#### Запуск контейнера с PostgreSQL
+
+Для использования PostgreSQL в контейнере Docker обычно не требуется создавать 
+собственный Dockerfile, так как существует официальный образ PostgreSQL, который можно использовать. 
+Однако, если нужно создать свой Dockerfile, это может выглядеть следующим образом:
+
+```Dockerfile
+# Официальный образ PostgreSQL
+FROM postgres:17
+
+# Установка дополнительных зависимостей или настроек, если необходимо
+
+# Копирование скриптов инициализации (если есть)
+COPY init.sql /docker-entrypoint-initdb.d/
+
+# Переменные окружения (по желанию)
+ENV POSTGRES_DB=db_name
+ENV POSTGRES_USER=db_user
+ENV POSTGRES_PASSWORD=db_password
+```
+
+
+#### Запуск контейнера с PostgreSQL без Dockerfile:
+
+`docker run --rm --name postgres_test -e POSTGRES_PASSWORD=postgres_pass -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres -d -p 5432:5432 -v pgdata:/var/lib/postgresql/data postgres`
 * <b>--name</b> устанавливает имя контейнера
 * <b>-e</b> задает переменные окружения
 * <b>-d</b> задает запуск контейнера в фоновом режиме
 * <b>-p</b> задает привязкку внутреннего порта сервера к порту контейнера
 * <b>-v</b> задает точку монтирования каталога данных на сервере к каталогу данных в контейнере
 
-`sudo docker exec -it <id/имя контейнера> bash`   активация psql в контейнере
+`docker exec -it <ID/имя контейнера> psql -U postgres -d postgres`   активация psql в контейнере
 
-`sudo docker stop fueros_pg`    остановка контейнера fueros_pg
+`docker stop postgres`    остановка контейнера postgres
+
+
+Запуск PostgreSQL в Docker и вход в psql:
+```bash
+docker run --name postgres -e POSTGRES_DB=postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:latest
+docker exec -it postgres psql -U postgres -d postgres
+```
+
+
+#### Сохранение данных между запусками контейнера
+
+По умолчанию, если контейнер останавли вается или удаляется, все данные в нем теряются. 
+Чтобы сохранить данные между запусками, используются тома Docker. 
+
+`-v pgdata:/var/lib/postgresql/data` cоздает или использует том pgdata для хранения данных PostgreSQL.
+Все данные базы данных будут храниться в этом томе, даже если контейнер будет остановлен или удален.
 
 
 ### Команды Docker
 
-<em>Команды применяются вместе с `sudo docker`</em>
+<em>Команды применяются вместе с `docker`</em>
 
 `pull <образ>`  забрать образ из Docker Hub
 
@@ -179,14 +216,26 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - .:/docker-entrypoint-initdb.d
+  
+  etl:
+    build: ./
+    container_name: df_etl
+    command: ["python3", "main.py"]
+    restart: always
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env
 ```
 
 В volumes должен находиться sql-файл, инициализирующий кластер PostgreSQL. Переменные окружения читаются из файла `.env`.
 
-`sudo docker compose up -d`   запуск контейнера в фоновом режиме
+`docker compose up -d`   запуск контейнера в фоновом режиме
 
-`sudo docker compose up --build`   сборка контейнера из образа и его запуск (--force-recreate пересоздание образа после остановки контейнера)
+`docker compose up --build`   сборка контейнера из образа и его запуск (--force-recreate пересоздание образа после остановки контейнера)
 
-`sudo docker exec -it <ID/имя контейнера> bash`   вход в терминал работающего контейнера
+`docker exec -it <ID/имя контейнера> bash`   вход в терминал работающего контейнера
 
-`sudo docker compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
+`docker compose down --rmi all`  остановка контейнеров и удаление образов, связанных с ними
+
+
