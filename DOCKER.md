@@ -119,6 +119,10 @@ ENV POSTGRES_USER=db_user
 ENV POSTGRES_PASSWORD=db_password
 ```
 
+`docker build -t image_name .`  сборка образа с названием image_name на основе Dockerfile из текущего каталога
+
+`docker run --name cont_name -e POSTGRES_PASSWORD=password -d image_name`   поднятие контейнера cont_name на основе образа image_name с передачей в переменной окружения пароля для PostgreSQL
+
 
 #### Запуск контейнера с PostgreSQL без Dockerfile:
 
