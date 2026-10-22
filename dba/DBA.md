@@ -744,6 +744,28 @@ DROP TABLESPACE test_tablespace;
 ```
 
 
+##### Как выяснить какие объекты зависят от табличного пространства
+
+1. Определить символическую ссылку на табличное пространство (в нашем случае `ts`):
+```sql
+select "oid" from pg_tablespace where spcname = 'ts';
+```
+
+2. Определить все базы данных, в которых есть зависимые от тебличного пространства объекты:
+```sql
+select datname 
+from pg_database 
+where "oid" in (select pg_tablespace_databases(16494::oid))
+```
+
+3. В каждой базе отдельно вывести объекты с данным oid:
+```sql
+select relnamespace::regnamespace, relname, relkind
+from pg_class
+where reltablespace = 16494::oid;
+```
+
+
 ### Локализация
 
 Возможности локализации позволяют хранить текст в различных кодировках. Для русского языка поддерживаются все основные кодировки символов, включая UTF8, WIN1251, KOI8R, ISO_8859_5.
