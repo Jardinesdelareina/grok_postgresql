@@ -297,6 +297,34 @@ PostgreSQL работает под управлением операционно
 [Функции для системного администрирования](https://postgrespro.ru/docs/postgresql/13/functions-admin#FUNCTIONS-ADMIN-DBSIZE)
 
 
+#### pgbench
+
+Встроенная утилита нагрузочного тестирования PostgreSQL. 
+
+```sh
+# создать БД (один раз)
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "CREATE DATABASE pgbench_db;"
+
+# инициализировать (один раз на БД)
+pgbench -i -s 5 -U "$POSTGRES_USER" -d pgbench_db
+
+# нагрузка: 10 клиентов, 2 потока, 60 секунд длительности теста, прогресс каждые 5 секунд
+pgbench -c 10 -j 2 -T 60 -P 5 -U "$POSTGRES_USER" -d pgbench_db
+
+# read-only
+pgbench -c 20 -j 4 -T 60 -S -P 5 -U "$POSTGRES_USER" -d pgbench_db
+```
+
+##### Для чего используется
+Smoke-тест: работает ли сервер, принимает ли соединения, не падает ли под нагрузкой.
+
+Сравнение конфигураций: поменял shared_buffers/work_mem/индексы — прогнал одинаковый pgbench до и после, сравнил TPS/латентность.
+
+Воспроизведение нагрузки для мониторинга: пока pgbench крутится, смотришь pg_stat_activity, pg_stat_user_tables, docker stats — ровно то, что просит урок про мониторинг.
+
+Проверка железа/диска: как ведёт себя стенд под конкурентной нагрузкой.
+
+
 Просмотр глобальной статистики по всей базе данных:
 ```sql
 SELECT *

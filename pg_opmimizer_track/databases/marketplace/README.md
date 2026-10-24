@@ -1,0 +1,1 @@
+/mnt/d/grok_postgresql/pg_opmimizer_track/databases/marketplace/source ./deploy.sh
