@@ -105,13 +105,11 @@ alter table mpdir.dir_statuses owner to role_mp;
 do $$
 declare
     statuses text[][] := array[
-        ['order', 'pending', 'Ожидает оплаты'],
         ['order', 'paid', 'Оплачен'],
         ['order', 'processing', 'В обработке'],
         ['order', 'cancelled', 'Отменён'],
         ['payment', 'pending', 'Ожидает подтверждения'],
         ['payment', 'captured', 'Подтвержден'],
-        ['payment', 'refunded', 'Возвращён'],
         ['payment', 'cancelled', 'Отменён']
     ];
     i int;
@@ -274,6 +272,7 @@ create table if not exists mpcore.products
     pr_id           bigint          generated always as identity primary key,
     us_id           bigint          not null references mpcore.users(us_id),
     cat_id          bigint          not null,
+    pr_num          varchar         not null,
     pr_name         varchar         not null,
     cnt_pr          int             not null,
     price           numeric(12, 2)  not null check (price >= 0),
@@ -296,6 +295,7 @@ create table if not exists mpcore.orders
     o_id            bigint          generated always as identity,
     us_id           bigint          not null references mpcore.users(us_id),
     status_code     varchar         not null,
+    cart_json       text            not null,
     total_amount    numeric(12, 2)  default 0,
 
     create_date     timestamptz     default now(),
@@ -305,13 +305,14 @@ create table if not exists mpcore.orders
     delete_date     timestamptz,
     deleted_by      text,
     primary key (o_id, create_date)
-) partition by range (create_date);
+);-- partition by range (create_date);
 
 alter table mpcore.orders owner to role_mp;
 
+/*
 do $$
 declare
-    start_date date := '2024-01-01';
+    start_date date := '2025-01-01';
     i int;
     part_start date;
     part_end   date;
@@ -326,39 +327,16 @@ begin
         );
     end loop;
 end $$;
-
+*/
 create index if not exists orders_status_idx on mpcore.orders(status_code);
 create index if not exists orders_created_date_idx on mpcore.orders(create_date);
 
-
--- Позиции заказа
-create table if not exists mpcore.order_items 
-(
-    o_id                bigint          generated always as identity,
-    order_create_date   timestamptz      not null,
-    pr_id               bigint          not null,
-    qty                 int             not null check (qty > 0),
-    item_price          numeric(12, 2)  not null,
-
-    create_date         timestamptz     default now(),
-    created_by          text,
-    update_date         timestamptz,
-    updated_by          text,
-    delete_date         timestamptz,
-    deleted_by          text,
-    primary key (o_id, order_create_date, pr_id),
-    foreign key (o_id, order_create_date) references mpcore.orders(o_id, create_date)
-);
-
-alter table mpcore.order_items owner to role_mp;
 
 -- Платежи
 create table if not exists mpcore.payments 
 (
     pay_id              bigint          generated always as identity,
     o_id                bigint          not null,
-    order_create_date   timestamptz     not null,
-    amount              numeric(12, 2)  not null,
     status_code         text            not null,
 
     create_date         timestamptz     default now(),
@@ -377,6 +355,13 @@ alter table mpcore.payments owner to role_mp;
 ------------------------------------
 ------------------------------------
 
-\ir procedures/create_user.sql
-\ir procedures/edit_user.sql
-\ir procedures/del_user.sql
+\ir procedures/user_create.sql
+\ir procedures/user_edit.sql
+\ir procedures/user_del.sql
+\ir procedures/product_create.sql
+\ir procedures/product_edit.sql
+\ir procedures/product_del.sql
+\ir procedures/order_create.sql
+\ir procedures/order_edit.sql
+\ir procedures/order_del.sql
+\ir procedures/payment_create.sql

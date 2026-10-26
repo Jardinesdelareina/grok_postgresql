@@ -51,7 +51,8 @@ begin
 		acc_type_code = v_acc_type_code,
 		update_date = current_timestamp,
 		updated_by = current_user
-	where us_id = v_us_id;
+	where us_id = v_us_id
+		and delete_date is null;
 
 	raise notice 'Пользователь % отредактирован', v_us_id;
 
@@ -60,4 +61,4 @@ exception
 end
 $$ language plpgsql security definer;
 
-alter procedure mpcore.create_user(varchar) owner to role_mp;
+alter procedure mpcore.user_edit(varchar) owner to role_mp;

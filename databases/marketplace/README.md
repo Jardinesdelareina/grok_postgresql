@@ -1,0 +1,1 @@
+/mnt/d/grok_postgresql/databases/marketplace/source ./deploy.sh

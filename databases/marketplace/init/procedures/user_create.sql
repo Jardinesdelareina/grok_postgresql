@@ -31,9 +31,28 @@ begin
 	end if;
 
 	v_first_name = (v_json ->> 'first_name')::text;
+	
+	if v_first_name is null then 
+		raise exception 'Не указано имя пользователя';
+	end if;
+	
 	v_last_name = (v_json ->> 'last_name')::text;
+
+	if v_last_name is null then 
+		raise exception 'Не указана фамилия пользователя';
+	end if;
+
 	v_cit_code = (v_json ->> 'cit_code')::varchar;
+
+	if v_cit_code is null then 
+		raise exception 'Не указан город пользователя';
+	end if;
+
 	v_acc_type_code = (v_json ->> 'acc_type_code')::varchar;
+
+	if v_acc_type_code is null then 
+		raise exception 'Не указан тип аккаунта пользователя';
+	end if;
 
 	insert into mpcore.users(first_name, last_name, phone_number, cit_code, acc_type_code)
 	values(v_first_name, v_last_name, v_phone_number, v_cit_code, v_acc_type_code);

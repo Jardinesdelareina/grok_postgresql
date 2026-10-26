@@ -22,13 +22,13 @@ begin
 		raise notice 'Не передан идентификатор пользователя';
 	end if;
 
-	if not exists (select 1 from mpcore.users where us_id = v_us_id) then
+	if not exists (select 1 from mpcore.users where us_id = v_us_id and delete_date is null) then
 		raise exception 'Пользователь % не найден', v_us_id;
 	end if;
 
 	update mpcore.users 
 	set 
-		delete_date = current_date,
+		delete_date = current_timestamp,
 		deleted_by = current_user
 	where us_id = v_us_id;
 
