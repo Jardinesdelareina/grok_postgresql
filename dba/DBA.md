@@ -459,6 +459,152 @@ FROM pg_hba_file_rules();
 `ALTER FUNCTION function() SECURITY DEFINER;`   объявление функции как работающей с правами создавшей ее роли
 
 
+##### Пример схемы управления доступом
+
+```sql
+create database test_db;
+--\c test_db
+
+
+-- 1. Групповые роли nologin - не имеют права входа, только права
+
+-- Владелец объектов базы данных (под ним создаются таблицы/вьюхи/функции)
+create role role_owner nologin;
+
+-- Группы по функционалу
+create role role_readonly nologin;  -- аналитики
+create role role_readwrite nologin;  -- разработчики: dml
+create role role_ddl nologin;  -- разработчики: ddl (create на схему)
+create role dba nologin;  -- администраторы
+
+-- Иерархия наследования групп
+grant role_readonly  to role_readwrite;
+grant role_readwrite to role_ddl;
+grant role_ddl       to dba;
+
+-- Разработчики могут переключаться в role_owner, чтобы создавать объекты
+grant role_owner to role_ddl;
+-- Создание объектов с командой set role role_owner
+
+
+-- 2. Схема app
+create schema app authorization role_owner;
+
+-- Схема public: отзываем всё у public, оставляем только dba
+revoke all on schema public from public;
+grant usage, create on schema public to dba;
+
+-- Схема app: базовый usage для всех рабочих групп
+grant usage on schema app to role_readonly;
+
+-- create на схему - только ddl-группе (разработчики)
+grant create on schema app to role_ddl;
+
+-- dba - полный контроль над схемой
+grant all on schema app to dba;
+
+
+-- 3. default privileges — чтобы будущие объекты сразу имели нужные гранты (выполняем for role role_owner, т.к. объекты создаются под ним)
+-- аналитикам: select на таблицы/вьюхи/sequences
+alter default privileges for role role_owner in schema app
+	grant select on tables to role_readonly;
+
+alter default privileges for role role_owner in schema app
+	grant select on sequences to role_readonly;
+
+-- аналитикам: select на будущие materialized views (tables покрывает views, но matviews удобнее явно)
+alter default privileges for role role_owner in schema app
+	grant select on tables to role_readonly;
+
+-- разработчикам: dml на таблицы/sequences + execute на функции
+alter default privileges for role role_owner in schema app
+    grant select, insert, update, delete on tables to role_readwrite;
+
+alter default privileges for role role_owner in schema app
+    grant usage, select, update on sequences to role_readwrite;
+
+-- разработчикам: execute на routines (functions + procedures, pg 11+)
+alter default privileges for role role_owner in schema app
+    grant execute on routines to role_readwrite;
+
+-- разработчикам: usage на будущие types/домены (нужно для колонок и параметров функций)
+alter default privileges for role role_owner in schema app
+    grant usage on types to role_readwrite;
+
+
+-- 4. Гранты на существующие объекты (если схема уже наполнена)
+grant select on all tables in schema app to role_readonly;
+grant select on all sequences in schema app to role_readonly;
+
+-- аналитикам: select на существующие вьюхи и materialized views
+grant select on all views in schema app to role_readonly;
+grant select on all materialized views in schema app to role_readonly;
+
+grant select, insert, update, delete on all tables in schema app to role_readwrite;
+grant usage, select, update on all sequences in schema app to role_readwrite;
+
+-- разработчикам: execute на существующие routines (functions + procedures)
+grant execute on all routines in schema app to role_readwrite;
+
+-- разработчикам: usage на существующие types/домены
+grant usage on all types in schema app to role_readwrite;
+
+
+-- 5. Пользователи (примеры)
+-- DBA
+create role kostyuk login inherit password 'dba_pass' in role dba;
+
+-- Разработчики
+create role ivanov login inherit password 'dev1_pass' in role role_ddl;
+create role petrov login inherit password 'dev2_pass' in role role_ddl;
+create role sidorov login inherit password 'dev3_pass' in role role_ddl;
+
+-- Аналитики
+create role stepanov login inherit password 'an1_pass' in role role_readonly;
+create role sergeev login inherit password 'an2_pass' in role role_readonly;
+create role yuriev login inherit password 'an3_pass' in role role_readonly;
+
+
+-- 6. Настройки подключения и search_path
+-- Явный search_path, чтобы не было сюрпризов с public
+alter role ivanov in database test_db set search_path = app, public;
+alter role petrov in database test_db set search_path = app, public;
+alter role sidorov in database test_db set search_path = app, public;
+alter role stepanov in database test_db set search_path = app, public;
+alter role sergeev in database test_db set search_path = app, public;
+alter role yuriev in database test_db set search_path = app, public;
+alter role kostyuk in database test_db set search_path = app, public;
+
+-- Запрет подключаться к базе всем, кроме нужных ролей
+revoke connect on database test_db from public;
+grant connect on database test_db to role_readonly, role_ddl, dba;
+
+
+-- 7. Проверка (выполнять в psql от суперпользователя)
+
+-- Проверить, что разработчик может создавать объекты через role_owner:
+-- set role ivanov;
+-- set role role_owner;
+-- create table app.t1(id int);
+-- reset role; reset role;
+
+-- Проверить, что разработчик не может дропнуть схему:
+-- set role ivanov;
+-- drop schema app;  -- должно упасть
+-- reset role;
+
+-- Проверить, что аналитик видит таблицы (после того как появятся):
+-- set role stepanov;
+-- select * from app.some_table;
+-- reset role;
+
+-- Проверить, что аналитик не может писать:
+-- set role stepanov;
+-- insert into app.t1(id) values (1);  -- должно упасть с permission denied
+-- reset role;
+```
+
+
 ##### Access privileges
 
 * a - INSERT
@@ -838,7 +984,7 @@ SELECT to_char(current_date, 'TMDay, DD TMmonth YYYY');
 Все команды выполняются от имени postgres.
 
 
-### Логическая копия
+#### Логическая копия
 
 <b>Логическое резервирование</b> — это набор команд SQL, восстанавливающих кластер (или базу данных, или отдельный объект) с нуля. Такая копия представляет собой, по сути, обычный текстовый файл, что дает известную гибкость (команды SQL можно выполнить на другой версии СУБД (при наличии совместимости на уровне команд) или на другой архитектуре (то есть не требуется двоичная совместимость)). Однако для большой базы этот механизм неэффективен, поскольку выполнение команд займет много времени. К тому же восстановить систему из такой резервной копии можно только на тот момент, в который она была сделана.
 
@@ -943,7 +1089,7 @@ ALTER ROLE dump_user BYPASSRLS;
 <em>После восстановления базы имеет смысл выполнить команду `ANALYZE`, которая соберет статистику.</em>
 
 
-### Физическая копия
+#### Физическая копия
 
 <b>Физическое резервирование</b> предполагает создание копии файловой системы (ФС). 
 
