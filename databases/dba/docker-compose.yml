@@ -1,0 +1,35 @@
+services:
+  server-1:
+    build: .
+    container_name: ${SERVER_1_NAME}
+    hostname: ${SERVER_1_NAME}
+    restart: unless-stopped
+    networks:
+      - net-server-1
+    ports:
+      - "${SERVER_1_PORT}:22"
+
+  server-2:
+    build: .
+    container_name: ${SERVER_2_NAME}
+    hostname: ${SERVER_2_NAME}
+    restart: unless-stopped
+    networks:
+      - net-server-2
+    ports:
+      - "${SERVER_2_PORT}:22"
+
+  server-3:
+    build: .
+    container_name: ${SERVER_3_NAME}
+    hostname: ${SERVER_3_NAME}
+    restart: unless-stopped
+    networks:
+      - net-server-3
+    ports:
+      - "${SERVER_3_PORT}:22"
+
+networks:
+  net-server-1:
+  net-server-2:
+  net-server-3:
