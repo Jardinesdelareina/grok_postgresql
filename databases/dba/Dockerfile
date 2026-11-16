@@ -14,6 +14,13 @@ RUN useradd -m -s /bin/bash fueros && \
     mkdir -p /var/run/sshd && \
     echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
 
-EXPOSE 22
+COPY install_postgres.sh /usr/local/bin/install_postgres.sh
+RUN chmod +x /usr/local/bin/install_postgres.sh && \
+    /usr/local/bin/install_postgres.sh
 
-CMD ["/bin/bash", "-c", "service ssh start && tail -f /dev/null"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 22 5432
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

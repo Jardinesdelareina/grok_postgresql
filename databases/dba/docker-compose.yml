@@ -5,7 +5,7 @@ services:
     hostname: ${SERVER_1_NAME}
     restart: unless-stopped
     networks:
-      - net-server-1
+      - pg-net
     ports:
       - "${SERVER_1_PORT}:22"
 
@@ -15,7 +15,7 @@ services:
     hostname: ${SERVER_2_NAME}
     restart: unless-stopped
     networks:
-      - net-server-2
+      - pg-net
     ports:
       - "${SERVER_2_PORT}:22"
 
@@ -25,11 +25,10 @@ services:
     hostname: ${SERVER_3_NAME}
     restart: unless-stopped
     networks:
-      - net-server-3
+      - pg-net
     ports:
       - "${SERVER_3_PORT}:22"
 
 networks:
-  net-server-1:
-  net-server-2:
-  net-server-3:
+  pg-net:
+    driver: bridge
