@@ -8,6 +8,16 @@ services:
       - pg-net
     ports:
       - "${SERVER_1_PORT}:22"
+    environment:
+      ROLE: primary
+    volumes:
+      - ./pg_config/server-1.conf:/etc/postgresql/16/main/conf.d/server.conf:ro
+      - ./pg_config/pg_hba.conf:/etc/postgresql/16/main/pg_hba.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
   server-2:
     build: .
@@ -18,6 +28,15 @@ services:
       - pg-net
     ports:
       - "${SERVER_2_PORT}:22"
+    depends_on:
+      server-1:
+        condition: service_healthy
+    environment:
+      ROLE: standby
+      PRIMARY_HOST: ${SERVER_1_NAME}
+    volumes:
+      - ./pg_config/server-2.conf:/etc/postgresql/16/main/conf.d/server.conf:ro
+      - ./pg_config/pg_hba.conf:/etc/postgresql/16/main/pg_hba.conf:ro
 
   server-3:
     build: .
@@ -28,6 +47,15 @@ services:
       - pg-net
     ports:
       - "${SERVER_3_PORT}:22"
+    depends_on:
+      server-1:
+        condition: service_healthy
+    environment:
+      ROLE: standby
+      PRIMARY_HOST: ${SERVER_1_NAME}
+    volumes:
+      - ./pg_config/server-3.conf:/etc/postgresql/16/main/conf.d/server.conf:ro
+      - ./pg_config/pg_hba.conf:/etc/postgresql/16/main/pg_hba.conf:ro
 
 networks:
   pg-net:
