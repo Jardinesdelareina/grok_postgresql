@@ -1,0 +1,78 @@
+scope: pg-lab
+name: pg3
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: pg3:8008
+
+etcd3:
+  hosts: etcd:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_keep_size: 128MB
+        max_wal_senders: 10
+        max_replication_slots: 10
+        archive_mode: "on"
+        archive_command: "pgbackrest --stanza=pg-lab archive-push %p"
+        restore_command: "pgbackrest --stanza=pg-lab archive-get %f %p"
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - local all all trust
+    - host all all 0.0.0.0/0 scram-sha-256
+    - host replication replicator 0.0.0.0/0 scram-sha-256
+  users:
+    admin:
+      password: admin
+      options:
+        - createrole
+        - createdb
+    replicator:
+      password: replicator
+      options:
+        - replication
+  post_bootstrap: /etc/patroni/post_bootstrap.sh
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: pg3:5432
+  data_dir: /home/postgres/pgdata/data
+  bin_dir: /usr/lib/postgresql/16/bin
+  authentication:
+    replication:
+      username: replicator
+      password: replicator
+    superuser:
+      username: postgres
+      password: postgres
+    rewind:
+      username: postgres
+      password: postgres
+  parameters:
+    unix_socket_directories: /var/run/postgresql
+    shared_preload_libraries: pg_stat_statements
+    shared_buffers: 128MB
+    work_mem: 4MB
+    effective_cache_size: 384MB
+    random_page_cost: 1.1
+    log_min_duration_statement: 200ms
+    log_lock_waits: on
+    log_temp_files: 0
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

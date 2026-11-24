@@ -1,45 +1,136 @@
 name: pg-lab
 
 services:
-  postgres:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.15
+    container_name: pg-lab-etcd
+    command:
+      - /usr/local/bin/etcd
+      - --name=etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=etcd=http://etcd:2380
+      - --initial-cluster-state=new
+    volumes:
+      - etcddata:/etcd-data
+    ports:
+      - "2379:2379"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  pg1:
     build:
       context: .
       dockerfile: Dockerfile.postgres
     image: pg-lab/postgres:16-pgbackrest
-    container_name: pg-lab-postgres
+    container_name: pg-lab-pg1
+    user: postgres
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["exec patroni /etc/patroni/patroni.yml"]
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    command: >
-      postgres
-      -c config_file=/etc/postgresql/postgresql.conf
-      -c hba_file=/etc/postgresql/pg_hba.conf
+      PATRONI_NAME: pg1
+      PATRONI_SCOPE: pg-lab
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - pgwal:/var/lib/postgresql/wal-archive
+      - pg1data:/home/postgres/pgdata
       - pgbackrest_spool:/var/spool/pgbackrest
-      - ../config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-      - ../config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ../config/patroni/patroni-pg1.yml:/etc/patroni/patroni.yml:ro
+      - ../config/patroni/post_bootstrap.sh:/etc/patroni/post_bootstrap.sh:ro
+      - ../app/seed:/seed:ro   
       - ../config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
-      - ../app/seed:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      - "8008:8008"
+    depends_on:
+      - etcd
     deploy:
       resources:
         limits:
           memory: 512M
 
+  pg2:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: pg-lab/postgres:16-pgbackrest
+    container_name: pg-lab-pg2
+    user: postgres
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["exec patroni /etc/patroni/patroni.yml"]
+    environment:
+      PATRONI_NAME: pg2
+      PATRONI_SCOPE: pg-lab
+    volumes:
+      - pg2data:/home/postgres/pgdata
+      - pgbackrest_spool:/var/spool/pgbackrest
+      - ../config/patroni/patroni-pg2.yml:/etc/patroni/patroni.yml:ro
+      - ../config/patroni/post_bootstrap.sh:/etc/patroni/post_bootstrap.sh:ro
+      - ../app/seed:/seed:ro   
+      - ../config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+    ports:
+      - "8009:8008"
+    depends_on:
+      - etcd
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  pg3:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: pg-lab/postgres:16-pgbackrest
+    container_name: pg-lab-pg3
+    user: postgres
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["exec patroni /etc/patroni/patroni.yml"]
+    environment:
+      PATRONI_NAME: pg3
+      PATRONI_SCOPE: pg-lab
+    volumes:
+      - pg3data:/home/postgres/pgdata
+      - pgbackrest_spool:/var/spool/pgbackrest
+      - ../config/patroni/patroni-pg3.yml:/etc/patroni/patroni.yml:ro
+      - ../config/patroni/post_bootstrap.sh:/etc/patroni/post_bootstrap.sh:ro
+      - ../app/seed:/seed:ro   
+      - ../config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
+    ports:
+      - "8010:8008"
+    depends_on:
+      - etcd
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  haproxy:
+    image: haproxy:2.9
+    container_name: pg-lab-haproxy
+    volumes:
+      - ../config/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "5000:5000"   # primary
+      - "5001:5001"   # standby
+    depends_on:
+      - pg1
+      - pg2
+      - pg3
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
   pgbouncer:
     image: edoburu/pgbouncer:v1.23.1-p2
     container_name: pg-lab-pgbouncer
     environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
+      DB_HOST: haproxy
+      DB_PORT: "5000"
       DB_USER: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
@@ -50,58 +141,21 @@ services:
     ports:
       - "6432:5432"
     depends_on:
-      postgres:
-        condition: service_healthy
+      - haproxy
     deploy:
       resources:
         limits:
           memory: 64M
 
-#  minio:
-#    image: quay.io/minio/minio:latest
-#    container_name: pg-lab-minio
-#    command: server /data --console-address ":9001"
-#    environment:
-#      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-#      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-#    volumes:
-#      - miniodata:/data
-#    ports:
-#      - "9000:9000"
-#      - "9001:9001"
-#    healthcheck:
-#      test: ["CMD", "mc", "ready", "local"]
-#      interval: 10s
-#      timeout: 5s
-#     retries: 10
-#    deploy:
-#      resources:
-#        limits:
-#          memory: 256M
-
-#  minio-init:
-#    image: quay.io/minio/mc:latest
-#    container_name: pg-lab-minio-init
-#    depends_on:
-#      minio:
-#        condition: service_healthy
-#    entrypoint: >
-#      /bin/sh -c "
-#      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
-#      mc mb -p local/pgbackrest || true &&
-#      exit 0
-#      "
-
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: pg-lab-exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://postgres:${POSTGRES_PASSWORD}@haproxy:5000/${POSTGRES_DB}?sslmode=disable"
     ports:
       - "9187:9187"
     depends_on:
-      postgres:
-        condition: service_healthy
+      - haproxy
     deploy:
       resources:
         limits:
@@ -177,10 +231,11 @@ services:
       "
 
 volumes:
-  pgdata:
-  pgwal:
+  etcddata:
+  pg1data:
+  pg2data:
+  pg3data:
   pgbackrest_spool:
   localstackdata:
   promdata:
   grafanadata:
-  #miniodata:
