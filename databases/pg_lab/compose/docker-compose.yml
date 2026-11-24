@@ -2,7 +2,10 @@ name: pg-lab
 
 services:
   postgres:
-    image: postgres:16
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    image: pg-lab/postgres:16-pgbackrest
     container_name: pg-lab-postgres
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -13,10 +16,12 @@ services:
       -c hba_file=/etc/postgresql/pg_hba.conf
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - pgwal:/var/lib/postgresql/wal-archive
+      - pgbackrest_spool:/var/spool/pgbackrest
       - ../config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ../config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ../config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro
       - ../app/seed:/docker-entrypoint-initdb.d:ro
-      - pgwal:/var/lib/postgresql/wal-archive
     ports:
       - "5432:5432"
     healthcheck:
@@ -134,9 +139,48 @@ services:
         limits:
           memory: 256M
 
+  localstack:
+    image: localstack/localstack:3.7
+    container_name: pg-lab-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: "0"
+      PERSISTENCE: "1"
+    volumes:
+      - localstackdata:/var/lib/localstack
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  localstack-init:
+    image: amazon/aws-cli:2.17.0
+    container_name: pg-lab-localstack-init
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      aws --endpoint-url=http://localstack:4566 s3 mb s3://pgbackrest || true;
+      exit 0
+      "
+
 volumes:
   pgdata:
   pgwal:
- # miniodata:
+  pgbackrest_spool:
+  localstackdata:
   promdata:
   grafanadata:
+  #miniodata:
