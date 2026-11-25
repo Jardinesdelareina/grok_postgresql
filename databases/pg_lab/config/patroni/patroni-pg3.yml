@@ -28,7 +28,7 @@ bootstrap:
         max_wal_senders: 10
         max_replication_slots: 10
         archive_mode: "on"
-        archive_command: "pgbackrest --stanza=pg-lab archive-push %p"
+        archive_command: "pgbackrest --stanza=pg-lab archive-push %p || test $? -eq 103"
         restore_command: "pgbackrest --stanza=pg-lab archive-get %f %p"
   initdb:
     - encoding: UTF8

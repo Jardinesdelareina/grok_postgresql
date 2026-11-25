@@ -113,11 +113,6 @@ Dashboards -> Import -> ID 9628 -> datasource Prometheus -> Import
 - **Transaction pooling** — ломает `SET` на сессию, prepared statements, advisory locks. Плюс: масштабирование соединений. Минус: часть приложений требует session pooling.
 - **PgBouncer → HAProxy** (`haproxy:5000`), не на конкретную ноду — при failover пулер не нужно перенастраивать.
 
-## Бюджет памяти
-- v0.1: < 1 ГБ
-- v0.2: ~1.3 ГБ
-- v0.3: ~2.1–2.5 ГБ (3 × 512 МБ PostgreSQL + 128 МБ etcd + 64 МБ HAProxy + 64 МБ PgBouncer + 256 МБ Prometheus + 256 МБ Grafana + 256 МБ LocalStack). Комфортно на 8 ГБ; если тесно — уберите Grafana/Prometheus на время.
-
 ## Типовые проблемы и фикс (v0.3)
 
 | Симптом | Причина | Фикс |
@@ -132,3 +127,44 @@ Dashboards -> Import -> ID 9628 -> datasource Prometheus -> Import
 | `database "shop" does not exist` | seed не применён (entrypoint убран) | `post_bootstrap` в `patroni.yml` + `chmod +x` в `setup` |
 | `switchover --leader pg3`: `Member X is not the leader` | `--leader` — это текущий, не цель | `--leader $(LEADER) --candidate $(TO)` (в Makefile) |
 | `patronictl` на `pg1` падает после failover | `pg1` остановлен | `PATRONI_CTL` (любая живая нода) в Makefile |
+
+
+```
+cd /mnt/d/grok_postgresql/databases/pg_lab
+
+# 4.1
+curl -s http://localhost:9090/api/v1/rules | python3 -m json.tool | grep -E '"name"|"state"' | head -30
+docker stop pg-lab-pg1 pg-lab-pg2 pg-lab-pg3
+sleep 90
+curl -s http://localhost:9090/api/v1/alerts | python3 -m json.tool | grep alertname
+docker start pg-lab-pg1 pg-lab-pg2 pg-lab-pg3
+sleep 90
+
+# 4.2
+docker exec pg-lab-pg1 patronictl -c /etc/patroni/patroni.yml edit-config
+# synchronous_mode: on, synchronous_mode_strict: true
+make ha-status
+docker exec pg-lab-pg2 psql -U postgres -c "show synchronous_standby_names;"   # "pg1" или "pg3"
+psql "postgresql://postgres:postgres@localhost:5000/shop" -c "insert into customers(email) values ('sync-ok@example.com');"
+
+# 4.2 strict-тест
+docker stop pg-lab-pg1 pg-lab-pg3   # НЕ лидера
+sleep 10
+timeout 5 psql "postgresql://postgres:postgres@localhost:5000/shop" -c "insert into customers(email) values ('blocked@example.com');"   # timeout
+docker start pg-lab-pg1 pg-lab-pg3
+sleep 25
+
+# 4.3
+make ha-status
+make backup-now
+make verify-backup
+date -u   # T0
+psql "postgresql://postgres:postgres@localhost:5000/shop" -c "select count(*) from customers;"   # N
+psql "postgresql://postgres:postgres@localhost:5000/shop" -c "drop table customers cascade;"
+sleep 120
+make restore-to-point T='<T0>'
+make start-restore-check
+sleep 10
+psql "postgresql://postgres:postgres@localhost:5433/shop" -c "select count(*) from customers;"   # N
+make stop-restore-check
+```
