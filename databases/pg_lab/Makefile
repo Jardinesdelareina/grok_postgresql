@@ -104,12 +104,13 @@ drop-for-pitr:
 
 
 restore-to-point:
-	@test -n "$(T)" || (echo "Usage: make restore-to-point T='2026-11-24 06:56:48+00'"; exit 1)
+	@test -n "$(T)" || (echo "Usage: make restore-to-point T='2026-11-25 08:39:09'"; exit 1)
+	docker volume rm pg-lab_pgdata_restore 2>/dev/null || true
 	docker volume create pg-lab_pgdata_restore
 	docker run --rm \
 	  --network pg-lab_default \
 	  -u postgres \
-	  -v pg-lab_pgdata_restore:/var/lib/postgresql/data \
+	  -v pg-lab_pgdata_restore:/home/postgres/pgdata \
 	  -v pg-lab_pgbackrest_spool:/var/spool/pgbackrest \
 	  -v $(PWD)/config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro \
 	  pg-lab/postgres:16-pgbackrest \
@@ -121,7 +122,7 @@ start-restore-check:
 	docker run -d --name pg-lab-postgres-restore \
 	  --network pg-lab_default \
 	  -e POSTGRES_PASSWORD=$${POSTGRES_PASSWORD:-postgres} \
-	  -v pg-lab_pgdata_restore:/var/lib/postgresql/data \
+	  -v pg-lab_pgdata_restore:/home/postgres/pgdata \
 	  -v pg-lab_pgbackrest_spool:/var/spool/pgbackrest \
 	  -v $(PWD)/config/pgbackrest/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf:ro \
 	  -v $(PWD)/config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro \

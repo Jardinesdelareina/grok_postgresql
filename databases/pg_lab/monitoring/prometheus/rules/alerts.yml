@@ -1,0 +1,106 @@
+groups:
+  - name: postgresql
+    interval: 30s
+    rules:
+      # 1. PostgreSQL недоступен (через HAProxy)
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL недоступен (pg_up=0)"
+          description: "HAProxy → primary не отвечает. Проверить make ha-status."
+
+      # 2. Реплика отстаёт
+      - alert: ReplicaLagHigh
+        expr: pg_replication_lag_seconds > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Реплика отстаёт > 10 с"
+          description: "Lag={{ $value }}s. Проверить pg_stat_replication, сеть, нагрузку."
+
+      # 3. Соединения близко к лимиту
+      - alert: ConnectionsHigh
+        expr: pg_stat_database_numbackends{datname="shop"} > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Соединений > 80 (max_connections=100)"
+          description: "Проверить PgBouncer, пулы приложения, утечки соединений."
+
+      # 4. Долгие транзакции
+      - alert: LongRunningTransaction
+        expr: pg_stat_activity_max_tx_duration{datname="shop"} > 300
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Транзакция > 5 мин"
+          description: "Риск bloat/wraparound. Проверить pg_stat_activity."
+
+      # 5. Блокировки
+      - alert: ManyLocks
+        expr: pg_locks_count > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Много блокировок (>50)"
+          description: "Проверить pg_locks, deadlock, long tx."
+
+      # 6. Cache hit ratio низкий
+      - alert: LowCacheHitRatio
+        expr: |
+          pg_stat_database_blks_hit{datname="shop"}
+          / (pg_stat_database_blks_hit{datname="shop"} + pg_stat_database_blks_read{datname="shop"})
+          < 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit ratio < 90%"
+          description: "Возможно, мало shared_buffers или память."
+
+      # 7. Checkpoints слишком частые (WAL мал)
+      - alert: FrequentCheckpoints
+        expr: rate(pg_stat_bgwriter_checkpoints_timed_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Частые checkpoints (>6/мин)"
+          description: "Возможно, max_wal_size мал."
+
+      # 8. Размер БД растёт быстро
+      - alert: DatabaseSizeGrowing
+        expr: delta(pg_database_size_bytes{datname="shop"}[1h]) > 1e9
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "БД выросла > 1 ГБ за час"
+          description: "Проверить bloat, autovacuum, нагрузку."
+
+      # 9. WAL generation высокая
+      - alert: HighWalGeneration
+        expr: rate(pg_stat_wal_records_total[5m]) > 1000
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Высокая генерация WAL (>1000 rec/s)"
+          description: "Проверить нагрузку записи, batch-операции."
+
+      # 10. Alertmanager сам жив
+      - alert: AlertmanagerDown
+        expr: up{job="alertmanager"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alertmanager недоступен"
+          description: "Алерты не доставляются."
