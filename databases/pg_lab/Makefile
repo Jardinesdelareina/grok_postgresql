@@ -164,9 +164,12 @@ drop-for-pitr:
 # ============================================================
 
 restore-to-point:
-	@test -n "$(T)" || (echo "Usage: make restore-to-point T='2026-11-25 08:39:09'"; exit 1)
+	@test -n "$(T)" || (echo "Usage: make restore-to-point T='2026-11-27 20:41:17'"; exit 1)
+	-docker rm -f pg-lab-postgres-restore 2>/dev/null || true
 	-docker volume rm pg-lab_pgdata_restore 2>/dev/null || true
 	docker volume create pg-lab_pgdata_restore
+	@docker run --rm -u root -v pg-lab_pgdata_restore:/home/postgres/pgdata postgres:16 \
+	  chown -R postgres:postgres /home/postgres/pgdata
 	docker run --rm \
 	  --network pg-lab_default \
 	  -u postgres \
